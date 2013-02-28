@@ -1,4 +1,4 @@
 dbphp
 =====
 
-php w/ db w/ ajax
+php w/ mysql w/ ajax
