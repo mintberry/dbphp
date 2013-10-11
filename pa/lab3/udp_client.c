@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 
 #define BUFFER_SIZE 512
 
@@ -45,19 +46,22 @@ int main(int argc, char *argv[]) {
 
     printf("user id: %s\n", argv[1]);
     id = argv[1];
-    if(strlen(id) < 1){
+    if(strlen(id) < 1 || strlen(id) > 15){
         printf("ERROR: invalid id\n");
     }
 
     sd = socket(AF_INET, SOCK_DGRAM, 0);
 
     server.sin_family = AF_INET;
+    /* get host by name not by ip */
     hp = gethostbyname(argv[2]);
     if(NULL == hp){
         printf("unable to get host by name\n");
         exit(-1);
     }
-    memcpy(&(server.sin_addr.s_addr), hp->h_addr, hp->h_length);
+    printf("host name: %s: ", hp->h_name);
+    printf("%s\n", inet_ntoa(*((struct in_addr *)hp->h_addr)));
+    memcpy(&(server.sin_addr), hp->h_addr, hp->h_length);
     server.sin_port = htons(atoi(argv[3]));
 
     /* set up receiver */
