@@ -166,23 +166,33 @@ void qconcat(void *q1p, void *q2p){
 
 /* returns data at n */
 void *qat(void *qp, int n){
-    qtype *q = (qtype *)qp;
-    qnode *head = q->head;
-    int i = 0;
-    if(n >= 0 && n < q->count){
-        for(;i < n;++i){
-            head = head->next;
+    if(NULL != qp){
+        qtype *q = (qtype *)qp;
+        qnode *head = q->head;
+        int i = 0;
+        if(n >= 0 && n < q->count){
+            for(;i < n;++i){
+                head = head->next;
+            }
+            return head->data;
+        } else {
+            printf("ERROR: queue is empty\n");
+            return NULL;
         }
-        return head->data;
     } else {
-        printf("ERROR: queue is empty\n");
-        return NULL;
+        printf("should open queue before using it\n");
+	return NULL;
     }
 }
 
 /* get queue size */
 int qsize(void * qp){
-    return ((qtype *)qp)->count;
+    if(NULL != qp){
+        return ((qtype *)qp)->count;
+    } else {
+        printf("should open queue before using it\n");
+	return -1;
+    }
 }
 #else
 /* use contiguous storage */

@@ -46,10 +46,9 @@ void catch_alarm (int sig)
 void * receive(void *addr){
     int rc;
     sockpair *pair = (sockpair *)addr;
-    socklen_t addr_len = sizeof(*(pair->server));
     while(1) {
         memset(buffer, 0, BUFFER_SIZE);
-        rc = recvfrom(pair->socket, buffer, sizeof(buffer), 0, (struct sockaddr *)(pair->server), &addr_len);
+        rc = recv(pair->socket, buffer, sizeof(buffer), 0);
         if(0 == strcmp(buffer, "ACK")){
             alarm(0);
             retries = 3;
@@ -76,11 +75,18 @@ int main(int argc, char *argv[]) {
         printf("ERROR: invalid id\n");
     }
 
-    sd = socket(AF_INET, SOCK_DGRAM, 0);
+    sd = socket(AF_INET, SOCK_STREAM, 0);
 
+    memset((char *)&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr(argv[2]);
     server.sin_port = htons(atoi(argv[3]));
+
+    /* connect to server, can set up retry here */
+    if (connect(sd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+	printf("unable to connect\n");
+	exit(-1);
+    }
 
     /* set up receiver */
     pair.socket = sd;
@@ -99,12 +105,12 @@ int main(int argc, char *argv[]) {
             signal (SIGALRM, catch_alarm);
             alarm(5);
         }
-        sendto(sd, input, sizeof(input), 0, (struct sockaddr *)&server, sizeof(server));
+        send(sd, input, sizeof(input), 0);
 
         /* receive response in a thread */
     }
     
-
+    pthread_join(receiver, NULL);
     close(sd);
 
     return EXIT_SUCCESS;
