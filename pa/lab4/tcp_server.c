@@ -81,6 +81,12 @@ void user_join(void * info){
     pthread_join(user->handler, NULL);
 }
 
+void remove_client(user_info * user){
+    int rc;
+    lqremove(q_user, match_addr, &(user->addr));
+    lqremove(q_active, match_addr, &(user->addr));
+    pthread_exit(&rc);        
+}
 
 public int main(int argc, char *argv[]) {
     /* server socket */
@@ -156,20 +162,22 @@ void communicate(char * buffer, user_info *user){
     memset(buffer, 0, BUFFER_SIZE);
     if(0 >= (rc = recv(sd, buffer, BUFFER_SIZE, 0))){
         printf("ERROR: fail to recv from client\n");
-        pthread_exit(&rc);
+        remove_client(user);
     }
         
     printf("received: %s\n", buffer);
-    rc = 0;
+    rc = 1;
     if(0 == strcmp(buffer, "/ping")){
         /* send an ack back to sender */
-        send(sd, ack, sizeof(ack), 0);
+        memset(buffer, 0, BUFFER_SIZE);
+        strcpy(buffer, ack);
     } else if(0 == strncmp(buffer, "/join:", 6)){
         /* add user to queue if id is not duplicated */
         strcpy(user->id, buffer + 6);    
         if(0 == lqremoveputifn(q_user, q_active, match_addr, &(user->addr), match_id, user)){
             /* send an ack back to sender */
-            send(sd, join, sizeof(join), 0);
+            memset(buffer, 0, BUFFER_SIZE);
+            strcpy(buffer, join);
         } else {
             printf("ERROR: duplicated user id\n");
             rc = -1;
@@ -178,7 +186,8 @@ void communicate(char * buffer, user_info *user){
         /* remove a user from queue, remember to free! */
         if(0 == (lqremoveputifn(q_active, q_user, match_addr, &(user->addr), NULL, NULL))){
             /* free(sender); */
-            send(sd, leave, sizeof(leave), 0);
+            memset(buffer, 0, BUFFER_SIZE);
+            strcpy(buffer, leave);
         } else {
             printf("ERROR: no such user\n");
             rc = -1;
@@ -189,21 +198,24 @@ void communicate(char * buffer, user_info *user){
             memset(buffer, 0, BUFFER_SIZE);
             for (i = 0;i < lqsize(q_active);++i){
                 temp_user = (user_info *)lqat(q_active, i);
-                strcat(buffer, " ");
-                strcat(buffer, temp_user->id);
+                if(NULL != temp_user){
+                    strcat(buffer, " ");
+                    strcat(buffer, temp_user->id);
+                }
             }
-            send(sd, buffer, BUFFER_SIZE, 0);
-            printf("buffer size: %lu", sizeof(buffer));
+            /* send(sd, buffer, BUFFER_SIZE, 0); */
         }
     } else if(0 == strcmp(buffer, ack) || 0 == strcmp(buffer, join) || 0 == strcmp(buffer, leave)) {
         /* just skip the server only msg */
     } else {
+        rc = 0;
         /* broadcast the msg if the sender is in queue */
         if(NULL != lqsearch(q_active, match_addr, &(user->addr))){
             for (i = 0;i < lqsize(q_active);++i){
                 temp_user = (user_info *)lqat(q_active, i);
-                if(user->addr.sin_addr.s_addr != temp_user->addr.sin_addr.s_addr || 
-                   user->addr.sin_port != temp_user->addr.sin_port){
+                if((user->addr.sin_addr.s_addr != temp_user->addr.sin_addr.s_addr || 
+                    user->addr.sin_port != temp_user->addr.sin_port) && 
+                   (NULL != temp_user)){
                     send(temp_user->sock, buffer, BUFFER_SIZE, 0);
                 }
             }
@@ -214,7 +226,15 @@ void communicate(char * buffer, user_info *user){
 
     /* send error back if there's any */
     if(-1 == rc){
-        send(sd, error, sizeof(error), 0);
+        memset(buffer, 0, BUFFER_SIZE);
+        strcpy(buffer, error);
     }
+    if(rc){
+        if(0 >= send(sd, buffer, BUFFER_SIZE, 0)){
+            printf("ERROR: fail to send\n");
+            remove_client(user);
+        }
+    }
+
 
 }

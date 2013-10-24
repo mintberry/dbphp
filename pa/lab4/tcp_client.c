@@ -50,7 +50,8 @@ void * receive(void *addr){
         memset(buffer, 0, BUFFER_SIZE);
         if(0 >= (rc = recv(pair->socket, buffer, sizeof(buffer), 0))){
             printf("ERROR: fail to recv from server\n");
-            pthread_exit(&rc);
+            /* pthread_exit(&rc); */
+            exit(-1);
         } 
         if(0 == strcmp(buffer, "ACK")){
             alarm(0);
@@ -113,7 +114,10 @@ int main(int argc, char *argv[]) {
             /* signal(SIGALRM, catch_alarm); */
             /* alarm(5); */
         }
-        send(sd, input, sizeof(input), 0);
+        if(0 >= send(sd, input, sizeof(input), 0)){
+            printf("ERROR: fail to send\n");
+            exit(-1);
+        }
 
         /* receive response in a thread */
     }
