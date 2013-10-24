@@ -48,7 +48,10 @@ void * receive(void *addr){
     sockpair *pair = (sockpair *)addr;
     while(1) {
         memset(buffer, 0, BUFFER_SIZE);
-        rc = recv(pair->socket, buffer, sizeof(buffer), 0);
+        if(0 >= (rc = recv(pair->socket, buffer, sizeof(buffer), 0))){
+            printf("ERROR: fail to recv from server\n");
+            pthread_exit(&rc);
+        } 
         if(0 == strcmp(buffer, "ACK")){
             alarm(0);
             retries = 3;
@@ -75,7 +78,10 @@ int main(int argc, char *argv[]) {
         printf("ERROR: invalid id\n");
     }
 
-    sd = socket(AF_INET, SOCK_STREAM, 0);
+    if(-1 == (sd = socket(AF_INET, SOCK_STREAM, 0))){
+        printf("unable to create client socket\n");
+        exit(-1);   
+    }
 
     memset((char *)&server, 0, sizeof(server));
     server.sin_family = AF_INET;
@@ -97,13 +103,15 @@ int main(int argc, char *argv[]) {
         memset(input, 0, BUFFER_SIZE);
         
         printf("type a command or msg:\n");
-        scanf("%s", input);
+        /* scanf("%s", input); */
+        fgets(input, sizeof(input), stdin);
+        input[strlen(input) - 1] = '\0';
         if(0 == strcmp(input, "/join")){
             strcat(input + 5, ":");
             strcat(input + 6, id);
         } else if(0 == strcmp(input, "/ping")) {
-            signal (SIGALRM, catch_alarm);
-            alarm(5);
+            /* signal(SIGALRM, catch_alarm); */
+            /* alarm(5); */
         }
         send(sd, input, sizeof(input), 0);
 

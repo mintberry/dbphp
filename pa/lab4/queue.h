@@ -38,4 +38,7 @@ void *qat(void *qp, int n);
 /* get queue size */
 int qsize(void * qp);
 
+void qsearchapply(void *qp, int (*searchfn)(void* elementp,void* keyp),
+                  void* skeyp, void (*fn)(void * elementp, void * data), void * data);
+
 #endif

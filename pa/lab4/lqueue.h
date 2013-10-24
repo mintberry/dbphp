@@ -38,4 +38,10 @@ void *lqat(void *qp, int n);
 /* get queue size */
 int lqsize(void * qp);
 
+void lqsearchapply(void *qp, int (*searchfn)(void* elementp,void* keyp),
+                   void* skeyp, void (*fn)(void * elementp, void * data), void * data);
+
+int lqremoveputifn(void *q1p, void *q2p, int (*searchfn1)(void* elementp,void* skeyp),
+                   void* skeyp1, int (*searchfn2)(void* elementp,void* skeyp), void * skeyp2);
+
 #endif

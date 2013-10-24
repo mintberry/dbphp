@@ -111,6 +111,15 @@ void* qsearch(void *qp, int (*searchfn)(void* elementp,void* keyp),
     }
 }
 
+/* apply something to the first matching element */
+void qsearchapply(void *qp, int (*searchfn)(void* elementp,void* keyp),
+                  void* skeyp, void (*fn)(void * elementp, void * data), void * data){
+    void *element = qsearch(qp, searchfn, skeyp);
+    if(NULL == element){
+        fn(element, data);
+    }
+}
+
 /* removes first matching element */
 void* qremove(void *qp, int (*searchfn)(void* elementp,void* keyp),
 	      void* skeyp){
