@@ -69,12 +69,17 @@ public abstract class UUSearchProblem {
 	private List<UUSearchNode> backchain(UUSearchNode node,
 			HashMap<UUSearchNode, UUSearchNode> visited) {
 		// you will write this method
+
 		ArrayList<UUSearchNode> chain = new ArrayList<UUSearchNode>();
-		UUSearchNode next = node;
-		while(next != null) {
-			chain.add(0, next);
-			next = visited.get(next);
+		// node may not be the goal, then return an empty list
+		if (node.goalTest()) {
+			UUSearchNode next = node;
+			while(next != null) {
+				chain.add(0, next);
+				next = visited.get(next);
+			}
 		}
+
 		return chain;
 	}
 
@@ -83,7 +88,6 @@ public abstract class UUSearchProblem {
 		
 		// You will write this method
 		HashMap<UUSearchNode, Integer> visited = new HashMap<UUSearchNode, Integer>();
-		visited.put(startNode, 0);
 
 		return dfsrm(startNode, visited, 0, maxDepth);
 	}
@@ -94,8 +98,6 @@ public abstract class UUSearchProblem {
 			int depth, int maxDepth) {
 		
 		// keep track of stats; these calls charge for the current node
-		updateMemory(visited.size());
-		incrementNodeCount();
 
 		List<UUSearchNode> chain = null;
 	
@@ -104,23 +106,26 @@ public abstract class UUSearchProblem {
 		if (depth > maxDepth) {
 			// do nothing
 		} else {
-			if (currentNode.goalTest()) {// base
-				chain = new ArrayList<UUSearchNode>();
-				chain.add(currentNode);
-			} else { // recursive
-				ArrayList<UUSearchNode> successors = currentNode.getSuccessors();
-				for (UUSearchNode node: successors) {
-					if (!visited.containsKey(node)) {// not visited
-						// incrementNodeCount();
-						visited.put(node, depth + 1);
+			// if a visited node is visited again in a shorter path
+			if (!visited.containsKey(currentNode) || visited.get(currentNode) > depth) {
+				updateMemory(visited.size());
+				incrementNodeCount();
+				visited.put(currentNode, depth);
+				if (currentNode.goalTest()) {// base
+					chain = new ArrayList<UUSearchNode>();
+					chain.add(currentNode);
+				} else { // recursive
+					ArrayList<UUSearchNode> successors = currentNode.getSuccessors();
+					for (UUSearchNode node: successors) {
 						chain = dfsrm(node, visited, depth + 1, maxDepth);
 						if (chain != null) {// only one goal?
 							chain.add(0, currentNode);
 							break;
 						}
-					}
-				}	
+					}	
+				}
 			}
+			
 		}
 	
 
@@ -137,6 +142,7 @@ public abstract class UUSearchProblem {
 
 		while(null == (chain = depthFirstPathCheckingSearch(depth)) && depth <= maxDepth) {
 			depth++;
+			// System.out.println("hahaha: " + depth + " " + this.nodesExplored);
 		}
 
 		return chain;
@@ -161,14 +167,18 @@ public abstract class UUSearchProblem {
 			int depth, int maxDepth) {
 
 		// you write this method
-		incrementNodeCount();
-		updateMemory(currentPath.size());
+		// incrementNodeCount();
+		// updateMemory(currentPath.size());
 		List<UUSearchNode> chain = null;
 
 		if (depth > maxDepth) {
 			// do nothing
 		} else {
 			if (!currentPath.contains(currentNode)) {// not visited
+
+				incrementNodeCount();
+				updateMemory(currentPath.size());
+				
 				currentPath.add(currentNode);
 				if (currentNode.goalTest()) {// base
 					chain = new ArrayList<UUSearchNode>();

@@ -29,15 +29,10 @@ public class CannibalProblem extends UUSearchProblem {
 		totalCannibals = sc;
 
 		//test getsuccessor
-		// CannibalNode test_node1 = new CannibalNode(3, 2, 1, 0);
+		// CannibalNode test_node = new CannibalNode(2, 1, 0, 0);
 
-		// CannibalNode test_node2 = new CannibalNode(2, 2, 0, 1);
-
-		// CannibalNode test_node3 = new CannibalNode(2, 0, 1, 2);
-
-		// CannibalNode test_node4 = new CannibalNode(0, 1, 0, 3);
-
-		// ArrayList<UUSearchNode> test_list = test_node2.getSuccessors();
+		// System.out.println(test_node);
+		// ArrayList<UUSearchNode> test_list = test_node.getSuccessors();
 		// for (UUSearchNode node:test_list) {
 		// 	System.out.println(node);
 		// }
@@ -52,7 +47,7 @@ public class CannibalProblem extends UUSearchProblem {
 		// do not change BOAT_SIZE without considering how it affect
 		// getSuccessors. 
 		
-		private final static int BOAT_SIZE = 2;
+		private final static int BOAT_SIZE = 3;
 	
 		// how many missionaries, cannibals, and boats
 		// are on the starting shore

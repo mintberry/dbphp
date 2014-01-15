@@ -12,7 +12,7 @@ public class CannibalDriver {
 
 
 		// set up the "standard" 331 problem:
-		CannibalProblem mcProblem = new CannibalProblem(3, 3, 1, 0, 0, 0);
+		CannibalProblem mcProblem = new CannibalProblem(10, 7, 1, 0, 0, 0);
 	
 		List<UUSearchProblem.UUSearchNode> path;
 
