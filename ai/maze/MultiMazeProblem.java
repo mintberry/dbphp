@@ -16,7 +16,9 @@ public class MultiMazeProblem extends InformedSearchProblem {
 
 	private Maze maze;
 	
-	public MultiMazeProblem(Maze m, int[] sx, int[] sy, int[] gx, int[] gy, int k) {
+	public MultiMazeProblem(Maze m, int[] sx, int[] sy, int[] gx, int[] gy, int robots) {
+		k = robots;
+
 		startNode = new MultiMazeNode(sx, sy, 0);
 		xStart = sx;
 		yStart = sy;
@@ -44,8 +46,8 @@ public class MultiMazeProblem extends InformedSearchProblem {
 			state = new int[2 * MultiMazeProblem.this.k];
 
 			for (int i = 0; i < x.length; ++i) {
-				state[i] = x[i];
-				state[++i] = y[i]; //
+				state[i * 2] = x[i];
+				state[i * 2 + 1] = y[i]; //
 			}
 		
 			cost = c;
