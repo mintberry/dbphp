@@ -22,14 +22,14 @@ public class MultiMazeDriver extends Application {
 	Maze maze;
 	
 	// instance variables used for graphical display
-	private static final int PIXELS_PER_SQUARE = 32;
+	private static final int PIXELS_PER_SQUARE = 10;
 	MazeView mazeView;
 	List<AnimationPath> animationPathList;
 	
 	// some basic initialization of the graphics; needs to be done before 
 	//  runSearches, so that the mazeView is available
 	private void initMazeView() {
-		maze = Maze.readFromFile("simple2.maz");
+		maze = Maze.readFromFile("complex.maz");
 		
 		animationPathList = new ArrayList<AnimationPath>();
 		// build the board
@@ -40,10 +40,20 @@ public class MultiMazeDriver extends Application {
 	// assumes maze and mazeView instance variables are already available
 	private void runSearches() {
 		
-		int[] sx = {0,0,0};
-		int[] sy = {0,1,2};
-		int[] gx = {6,6,6};
-		int[] gy = {0,1,2};
+		int[] sx = {0};
+		int[] sy = {0};
+		int[] gx = {39};
+		int[] gy = {39};
+
+		// int[] sx = {0,0,0,0,0};
+		// int[] sy = {0,1,2,3,4};
+		// int[] gx = {8,7,6,7,6};
+		// int[] gy = {0,0,0,1,1};
+
+		// int[] sx = {2,1,1,2,0,2,0,0};
+		// int[] sy = {0,2,0,2,1,1,2,0};
+		// int[] gx = {1,2,0,1,2,0,1,2};
+		// int[] gy = {2,2,1,1,1,0,0,0};
 
 		MultiMazeProblem mazeProblem = new MultiMazeProblem(maze, sx, sy, gx,
 				gy, sx.length);
@@ -59,7 +69,7 @@ public class MultiMazeDriver extends Application {
 		// System.out.println("BFS:  ");
 		// mazeProblem.printStats();
 
-		List<SearchNode> astarPath = mazeProblem.astarSearch();
+		List<SearchNode> astarPath = mazeProblem.astarSearch2();
 		animationPathList.add(new AnimationPath(mazeView, astarPath, sx.length));
 		System.out.println("A*:  ");
 		mazeProblem.printStats();
@@ -140,7 +150,7 @@ public class MultiMazeDriver extends Application {
 			MultiMazeNode firstNode = (MultiMazeNode) searchPath.get(0);
 
 			for (int i = 0; i < k; ++i) {
-				System.out.println(firstNode.getX(i) + ", " + firstNode.getY(i));
+				// System.out.println(firstNode.getX(i) + ", " + firstNode.getY(i));
 				pieces[i] = mazeView.addPiece(firstNode.getX(i), firstNode.getY(i));
 				lastX[i] = firstNode.getX(i);
 				lastY[i] = firstNode.getY(i);

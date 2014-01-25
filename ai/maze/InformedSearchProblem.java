@@ -9,7 +9,7 @@ import java.util.HashSet;// no need for this?
 
 public class InformedSearchProblem extends SearchProblem {
 	
-	public List<SearchNode> astarSearch() {
+	public List<SearchNode> astarSearch2() {
 		
 		resetStats();
 
@@ -35,7 +35,6 @@ public class InformedSearchProblem extends SearchProblem {
                     return backchain(cur, reachedFrom);
                 }
                 explored.add(cur);//
-
                 ArrayList<SearchNode> successors = cur.getSuccessors();
                 for (SearchNode node : successors) {
                     if (!explored.contains(node)) {
@@ -52,4 +51,45 @@ public class InformedSearchProblem extends SearchProblem {
 
 		return null;
 	}
+
+    public List<SearchNode> astarSearch() {
+        
+        resetStats();
+
+        PriorityQueue<SearchNode> frontier = new PriorityQueue<SearchNode>();
+        HashMap<SearchNode, Double> queued = new HashMap<SearchNode, Double>();
+        // HashSet<SearchNode> explored = new HashSet<SearchNode>();
+
+        HashMap<SearchNode, SearchNode> reachedFrom = new HashMap<SearchNode, SearchNode>();
+
+        // add the start node
+        frontier.add(startNode);
+        queued.put(startNode, startNode.priority());
+        reachedFrom.put(startNode, null);
+
+        while(!frontier.isEmpty()) {
+            SearchNode cur = frontier.poll(); // the highest priority state
+            // if the node polled is not explored before, or with a higher priority
+            if (!queued.containsKey(cur) || queued.get(cur) >= cur.priority()) { 
+                incrementNodeCount();
+                updateMemory(frontier.size() + reachedFrom.size() + queued.size());
+                if (cur.goalTest()) {
+                    return backchain(cur, reachedFrom);
+                }
+                // explored.add(cur);//
+                // queued.put(cur, cur.priority());
+                ArrayList<SearchNode> successors = cur.getSuccessors();
+                for (SearchNode node : successors) {
+                    if (!queued.containsKey(node) || queued.get(node) > node.priority()) {
+                        queued.put(node, node.priority());
+                        reachedFrom.put(node, cur);
+                        frontier.add(node);
+                    }
+                }
+            }
+            
+        }
+
+        return null;
+    }
 }

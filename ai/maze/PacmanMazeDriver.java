@@ -29,7 +29,7 @@ public class PacmanMazeDriver extends Application {
 	// some basic initialization of the graphics; needs to be done before 
 	//  runSearches, so that the mazeView is available
 	private void initMazeView() {
-		maze = Maze.readFromFile("simple2.maz");
+		maze = Maze.readFromFile("simple3.maz");
 		
 		animationPathList = new ArrayList<AnimationPath>();
 		// build the board
@@ -40,8 +40,8 @@ public class PacmanMazeDriver extends Application {
 	// assumes maze and mazeView instance variables are already available
 	private void runSearches() {
 		
-		int sx = 7;
-		int sy = 7;
+		int sx = 9;
+		int sy = 9;
 
 		int gx = 6;
 		int gy = 0;
@@ -62,7 +62,7 @@ public class PacmanMazeDriver extends Application {
 
 		List<SearchNode> astarPath = mazeProblem.astarSearch();
 		animationPathList.add(new AnimationPath(mazeView, astarPath));
-		System.out.println("A*:  ");
+		System.out.println("A*:  " + astarPath.size());
 		mazeProblem.printStats();
 
 	}
@@ -91,7 +91,7 @@ public class PacmanMazeDriver extends Application {
 		runSearches();
 
 		// sets mazeworld's game loop (a javafx Timeline)
-		Timeline timeline = new Timeline(1.0);
+		Timeline timeline = new Timeline(1);
 		timeline.setCycleCount(Timeline.INDEFINITE);
 		timeline.getKeyFrames().add(
 				new KeyFrame(Duration.seconds(.05), new GameHandler()));
@@ -126,18 +126,28 @@ public class PacmanMazeDriver extends Application {
 		private int lastX;
 		private int lastY;
 
+		private Node[] pieces;
+		private int[] Xs;
+		private int[] Ys;
+
 		boolean animationDone = true;
 
 		public AnimationPath(MazeView mazeView, List<SearchNode> path) {
 			searchPath = path;
-			// PacmanMazeNode firstNode = (PacmanMazeNode) searchPath.get(0);
+			PacmanMazeNode firstNode = (PacmanMazeNode) searchPath.get(0);
 			// piece = mazeView.addPiece(firstNode.getX(), firstNode.getY());
 
 			// a random valid start point
-			lastX = 4;
-			lastY = 1;
+			// lastX = 3;
+			// lastY = 0;
+			Xs = firstNode.getX();
+			Ys = firstNode.getY();
+			pieces = new Node[Xs.length];
+			for (int i = 0; i < Xs.length; ++i) {
+				pieces[i] = mazeView.addPiece(Xs[i], Ys[i]);
+			}
 			
-			piece = mazeView.addPiece(lastX, lastY);
+			// piece = mazeView.addPiece(lastX, lastY);
 		}
 
 		// try to do the next step of the animation. Do nothing if
@@ -151,15 +161,18 @@ public class PacmanMazeDriver extends Application {
 				PacmanMazeNode mazeNode = (PacmanMazeNode) searchPath
 						.get(currentMove);
 				int[] lastAction = mazeNode.getAction();
-				if (mazeNode.isMoving(lastX, lastY, lastAction)) {
-					int dx = lastAction[0];
-					int dy = lastAction[1];
-					// System.out.println("animating " + dx + " " + dy);
-					animateMove(piece, dx, dy);
-					lastX += dx;
-					lastY += dy;
-				} else {
-					// stand still
+				for (int i = 0; i < Xs.length; ++i) {
+					
+					if (mazeNode.isMoving(Xs[i], Ys[i], lastAction)) {
+						int dx = lastAction[0];
+						int dy = lastAction[1];
+						// System.out.println("animating " + dx + " " + dy);
+						animateMove(pieces[i], dx, dy);
+						Xs[i] += dx;
+						Ys[i] += dy;
+					} else {
+						// stand still
+					}	
 				}
 
 				currentMove++;

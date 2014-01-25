@@ -99,6 +99,11 @@ public class MultiMazeProblem extends InformedSearchProblem {
 					if(maze.isLegal(xNew, yNew) && !hasCollision(i, xNew, yNew)) {// also test if collides with other robot
 						//System.out.println("legal successor found " + " " + xNew + " " + yNew);
 						SearchNode succ = new MultiMazeNode(state, getCost() + 1.0);
+
+						if (succ.heuristic() + 1.0 < this.heuristic()) {
+							System.out.println("err");
+						}	
+
 						successors.add(succ);
 					}
 

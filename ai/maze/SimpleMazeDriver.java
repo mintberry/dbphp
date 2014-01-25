@@ -22,14 +22,14 @@ public class SimpleMazeDriver extends Application {
 	Maze maze;
 	
 	// instance variables used for graphical display
-	private static final int PIXELS_PER_SQUARE = 32;
+	private static final int PIXELS_PER_SQUARE = 8;
 	MazeView mazeView;
 	List<AnimationPath> animationPathList;
 	
 	// some basic initialization of the graphics; needs to be done before 
 	//  runSearches, so that the mazeView is available
 	private void initMazeView() {
-		maze = Maze.readFromFile("complex.maz");
+		maze = Maze.readFromFile("simple.maz");
 		
 		animationPathList = new ArrayList<AnimationPath>();
 		// build the board
@@ -42,7 +42,7 @@ public class SimpleMazeDriver extends Application {
 		
 		int sx = 0;
 		int sy = 0;
-		int gx = 20;
+		int gx = 6;
 		int gy = 0;
 
 		SimpleMazeProblem mazeProblem = new SimpleMazeProblem(maze, sx, sy, gx,

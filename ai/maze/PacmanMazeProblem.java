@@ -66,12 +66,22 @@ public class PacmanMazeProblem extends InformedSearchProblem {
 
 		}
 		
-		public int getX() {// no need for this
-			return xGoal;
+		public int[] getX() {// no need for this
+			int[] Xs = new int[state.size()];
+			int i = 0;
+			for (Point p : state) {
+				Xs[i++] = p.x;
+			}
+			return Xs;
 		}
 		
-		public int getY() {
-			return yGoal;
+		public int[] getY() {
+			int[] Ys = new int[state.size()];
+			int i = 0;
+			for (Point p : state) {
+				Ys[i++] = p.y;
+			}
+			return Ys;
 		}
 
 		public int[] getAction(){
@@ -84,18 +94,31 @@ public class PacmanMazeProblem extends InformedSearchProblem {
 
 			for (int[] action: actions) {
 				HashSet<Point> stateNew = new HashSet<Point>();// an empty set
+				double cost = 0.0;
 				for (Point p: state) {
+					cost += 1.0;
 					Point pointNew = new Point(p.x + action[0], p.y + action[1]);
 					// if the robot can move
 					if (maze.isLegal(pointNew.x, pointNew.y)) {
+						if (stateNew.contains(pointNew)) {
+							cost += (Math.abs(pointNew.x - xGoal) + Math.abs(pointNew.y - yGoal));
+						}
 						stateNew.add(pointNew);
 					} else {// otherwise it will stand still
+						if (stateNew.contains(p)) {
+							cost += (Math.abs(p.x - xGoal) + Math.abs(p.y - yGoal));
+						}
 						stateNew.add(p);
 					}
 				}
 
 				// what if two states are 'same'? action is different
 				SearchNode succ = new PacmanMazeNode(stateNew, action, getCost() + 1.0);
+				
+				// test if the heuristic is consistent
+				if (succ.heuristic() + cost < this.heuristic()) {
+					System.out.println("err");
+				}
 				successors.add(succ);
 				
 			}
@@ -146,11 +169,12 @@ public class PacmanMazeProblem extends InformedSearchProblem {
 			// double dx = xGoal - state[0];
 			// double dy = yGoal - state[1];
 			// return Math.abs(dx) + Math.abs(dy);
-			int distance = 0;
+
+			double distance = 0.0;
 			for (Point p : state) {
 				distance += (Math.abs(p.x - xGoal) + Math.abs(p.y - yGoal));
 			}
-			
+
 			return distance;
 		}
 
