@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.lang.Math;
 import java.util.Collections;
+import java.util.Comparator;
 
 import assignment_mazeworld.*;
 
@@ -110,6 +111,13 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		ArrayList<ConfigNode> neighbours = new ArrayList<ConfigNode>();
 
 		// sort the collection
+		Collections.sort(neighbours, new Comparator<ConfigNode>(){
+			public int compare(ConfigNode config1, ConfigNode config2) {
+	    	//ascending order
+	      	return config1.distance(node.armConfig.config) >= config2.distance(node.armConfig.config) ? 1 : -1;
+
+	    }
+		});
 
 		return neighbours;
 	}
