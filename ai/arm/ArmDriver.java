@@ -9,8 +9,8 @@ import javafx.scene.paint.Color;
 
 public class ArmDriver extends Application {
 	// default window size
-	protected int window_width = 600;
-	protected int window_height = 400;
+	protected static int window_width = 600;
+	protected static int window_height = 400;
 	
 	public void addPolygon(Group g, Double[] points) {
 		Polygon p = new Polygon();

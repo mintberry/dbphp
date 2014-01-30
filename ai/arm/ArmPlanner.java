@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.lang.Math;
+import java.util.Collections;
 
 import assignment_mazeworld.*;
 
@@ -17,31 +19,98 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 	protected HashMap<ConfigNode, HashSet<ConfigNode>> roadMap;
 
+	protected HashMap<ConfigNode, Integer> components;// optional
+
 	protected final double[] start;
 	protected final double[] goal;
 
+	protected World world;
+
 	// initialize the planner
-	public ArmPlanner(double[] s, double[] g){
+	public ArmPlanner(double[] s, double[] g, World world){
 		roadMap = new HashMap<ConfigNode, HashSet<ConfigNode>>();
+		this.world = world;
 
 		this.start = new double[s.length];
 		this.goal = new double[g.length];
 
 		System.arraycopy(s, 0, this.start, 0, s.length);
 		System.arraycopy(g, 0, this.goal, 0, g.length);
+
+		components = new HashMap<ConfigNode, Integer>();
 	}
 
-	// roadmap constuction
-	public void xRoadMap(){
+	// roadmap constuction, N configs, k nearest neighbour
+	public void xRoadMap(int N, int k){
+		// sample configs including start and goal
 		int links = this.start.length / 2 - 1;
+		double length = start[2];// length of first link
 		ConfigNode startNode = new ConfigNode(this.start, links, 0);
+		ConfigNode goalNode = new ConfigNode(this.goal, links, 0);
+		if (!world.armCollision(startNode.armConfig) && !world.armCollision(goalNode.armConfig)) {
+			roadMap.put(startNode, new HashSet<ConfigNode>());
+			roadMap.put(goalNode, new HashSet<ConfigNode>());
 
+			components.put(startNode, 0);
+			components.put(goalNode, 1);
 
+			// 
+			for (int i = 2; i < N;) {
+				double[] config = randomConfig(links, ArmDriver.window_width, ArmDriver.window_height, length);
+				ConfigNode node = new ConfigNode(config, links, 0);
+				// check if this config collide with obs
+				if (!world.armCollision(node.armConfig)) {
+					++i;
+					roadMap.put(node, new HashSet<ConfigNode>());
+
+					components.put(node, i);
+				}
+			}	
+
+			// connect vertices
+			for (ConfigNode node: roadMap.keySet()) {
+				List<ConfigNode> neighbours = kNearest(node, k);
+				for (ConfigNode neighbour: neighbours) {
+					if (components.get(node) != components.get(neighbour) // not in the same component
+						&& !world.armCollisionPath(node.armConfig, node.armConfig.config, neighbour.armConfig.config)) {
+						// add edge, connected
+						roadMap.get(node).add(neighbour);
+						roadMap.get(neighbour).add(node);
+
+						if (components.get(node) < components.get(neighbour)) {
+							components.put(neighbour, components.get(node));
+						} else {
+							components.put(node, components.get(neighbour));
+						}
+					}
+				}
+			}
+		} else {
+			System.out.println("start or goal error");
+		}
+
+	}
+
+	// sample a config
+	private double[] randomConfig(int links, double width, double height, double length){
+		double[] config = new double[links * 2 + 2];
+		config[0] = width * Math.random();
+		config[1] = height * Math.random();
+		for (int i = 1; i <= links; i++) {
+			// need to sample arm length?
+			config[2*i] = length;
+			config[2*i+1] = Math.random() * (Math.PI * 2.0);
+		}
+		return config;
 	}
 
 	// k nearest neighbours
-	private List<ConfigNode> kNearest(int k){
-		List<ConfigNode> neighbours = new LinkedList<ConfigNode>();
+	private List<ConfigNode> kNearest(ConfigNode node, int k){
+		List<ConfigNode> nearests = new LinkedList<ConfigNode>();
+		ArrayList<ConfigNode> neighbours = new ArrayList<ConfigNode>();
+
+		// sort the collection
+
 		return neighbours;
 	}
 
@@ -70,7 +139,8 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 		// distance from this config to a neighbour
 		protected double distance(double[] neighbour){
-			return 0.0;
+			ArmLocalPlanner alp = new ArmLocalPlanner();
+			return alp.moveInParallel(this.armConfig.config, neighbour);
 		}
 		
 		// public int getX() {
