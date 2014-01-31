@@ -20,7 +20,8 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 	protected HashMap<ConfigNode, HashSet<ConfigNode>> roadMap;
 
-	protected HashMap<ConfigNode, Integer> components;// optional
+	protected HashMap<ConfigNode, Integer> components;
+	protected UnionFind<ConfigNode> uf;
 
 	protected final double[] start;
 	protected final double[] goal;
@@ -39,6 +40,7 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		System.arraycopy(g, 0, this.goal, 0, g.length);
 
 		components = new HashMap<ConfigNode, Integer>();
+		// uf = new UnionFind();
 	}
 
 	// roadmap constuction, N configs, k nearest neighbour
@@ -48,12 +50,14 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		double length = start[2];// length of first link
 		ConfigNode startNode = new ConfigNode(this.start, links, 0);
 		ConfigNode goalNode = new ConfigNode(this.goal, links, 0);
+
+		components.put(startNode, 0);
+		components.put(goalNode, 1);
+
 		if (!world.armCollision(startNode.armConfig) && !world.armCollision(goalNode.armConfig)) {
 			roadMap.put(startNode, new HashSet<ConfigNode>());
 			roadMap.put(goalNode, new HashSet<ConfigNode>());
 
-			components.put(startNode, 0);
-			components.put(goalNode, 1);
 
 			// 
 			for (int i = 2; i < N;) {
@@ -61,28 +65,26 @@ public class ArmPlanner extends InformedSearchProblem	 {
 				ConfigNode node = new ConfigNode(config, links, 0);
 				// check if this config collide with obs
 				if (!world.armCollision(node.armConfig)) {
-					++i;
+
 					roadMap.put(node, new HashSet<ConfigNode>());
 
 					components.put(node, i);
+					++i;
 				}
 			}	
+
+			// init uf now!
+			this.uf = new UnionFind<ConfigNode>(components);
 
 			// connect vertices
 			for (ConfigNode node: roadMap.keySet()) {
 				List<ConfigNode> neighbours = kNearest(node, k);
 				for (ConfigNode neighbour: neighbours) {
-					if (components.get(node) != components.get(neighbour) // not in the same component
-						&& !world.armCollisionPath(node.armConfig, node.armConfig.config, neighbour.armConfig.config)) {
+					if (!world.armCollisionPath(node.armConfig, node.armConfig.config, neighbour.armConfig.config)) {
 						// add edge, connected
 						roadMap.get(node).add(neighbour);
 						roadMap.get(neighbour).add(node);
 
-						if (components.get(node) < components.get(neighbour)) {
-							components.put(neighbour, components.get(node));
-						} else {
-							components.put(node, components.get(neighbour));
-						}
 					}
 				}
 			}
@@ -208,6 +210,50 @@ public class ArmPlanner extends InformedSearchProblem	 {
 			return heuristic() + getCost();
 		}
 
+	}
+
+	// union find class
+	public class UnionFind<T> {
+		private int[] id;
+		private int[] sz;
+
+		protected HashMap<T, Integer> map;
+
+		public UnionFind(HashMap<T, Integer> m) {
+			int N = m.size();
+			id = new int[N];
+			sz = new int[N];
+			for (int i = 0; i < N; i++) {
+				id[i] = i;
+				sz[i] = 1;
+			}
+
+			this.map = m;
+		}
+
+		private int root(T e) {
+			int i = map.get(e);
+			while (i != id[i])  {
+				id[i] = id[id[i]];
+				i = id[i];
+			}
+			return i;
+		}
+
+		public boolean find(T e1, T e2) {
+			return root(e1) == root(e2);
+		}
+
+		public void unite(T e1, T e2) {
+			int i = root(e1), j = root(e2);
+			if (sz[i] > sz[j]) {
+	 			id[j] = i;	
+	 			sz[i] += sz[j];
+			} else {
+	 			id[i] = j;
+	 			sz[j] += sz[i];
+			}
+		}
 	}
 
 	// Get the time to move from configuration 1 to configuration 2;
