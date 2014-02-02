@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.lang.Math;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.PriorityQueue;
 
 import assignment_mazeworld.*;
 
@@ -135,6 +136,26 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		return neighbours.subList(0, k);
 	}
 
+	// k nearest with priority queue
+	private List<ConfigNode> kNearestPQ(ConfigNode node, int k){
+		PriorityQueue<ConfigNode> neighboursPQ = new PriorityQueue<ConfigNode>(k, new Comparator<ConfigNode>(){
+			public int compare(ConfigNode config1, ConfigNode config2) {
+	    	//ascending order
+	      	return config1.distance(node.armConfig.config) >= config2.distance(node.armConfig.config) ? -1 : 1;
+
+	    }
+		});
+
+		for (ConfigNode cn: roadMap.keySet()) {
+			if (!neighboursPQ.offer(cn)) {
+				neighboursPQ.poll();
+				neighboursPQ.add(cn);
+			}
+		}
+
+		return new ArrayList<ConfigNode>(neighboursPQ);
+	}
+
 	// node class used by searches.  Searches themselves are implemented
 	//  in SearchProblem.
 	public class ConfigNode implements SearchNode {
@@ -173,7 +194,12 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		// }
 
 		public ArrayList<SearchNode> getSuccessors() {
-			return new ArrayList<SearchNode>(roadMap.get(this));
+			ArrayList<SearchNode> successors = new ArrayList<SearchNode>(roadMap.get(this));
+			for (SearchNode node: successors) {
+				((ConfigNode)node).setCost(this.cost + this.distance(((ConfigNode)node).armConfig.config));
+			}
+			return successors;
+			// return new ArrayList<SearchNode>(roadMap.get(this));
 		}
 		
 		@Override
@@ -202,6 +228,10 @@ public class ArmPlanner extends InformedSearchProblem	 {
 		@Override
 		public double getCost() {
 			return cost;
+		}
+
+		public void setCost(double c){
+			this.cost = c;
 		}
 		
 

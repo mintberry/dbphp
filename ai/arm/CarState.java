@@ -1,5 +1,7 @@
 package assignment_robots;
 
+import java.util.Arrays;
+
 // this class declares the configuration of a car robot;
 // standard set and get function;
 
@@ -20,11 +22,24 @@ public class CarState {
 		s[2] = theta;
 	}
 
+	public CarState (CarState cs) {
+		s = new double[3];
+		System.arraycopy(cs.s, 0, s, 0, 3);
+	}
+
 	public void set(double x, double y, double theta) {
 		s[0] = x;
 		s[1] = y;
-		s[2] = theta;
-		
+		s[2] = theta;		
+	}
+
+	public void set(CarState cs) {
+		System.arraycopy(cs.s, 0, s, 0, 3);	
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		return Arrays.equals(s, ((CarState) other).s);
 	}
 
 	public double getX() {

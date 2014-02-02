@@ -99,7 +99,8 @@ public class ArmDriver extends Application {
 		double b[][] = {{500, 230}, {450, 400}, {580, 325}};
 		Poly obstacle2 = new Poly(b);
 		
-		double c[][] = {{260, 20}, {400, 180}, {470, 20}};
+		// double c[][] = {{260, 20}, {400, 180}, {470, 20}};
+		double c[][] = {{200, 50}, {340, 210}, {410, 50}};
 		Poly obstacle3 = new Poly(c);
 
 		// add 4 boundaries as obstacles
