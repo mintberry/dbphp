@@ -98,7 +98,7 @@ public class ArmRobot {
 		ang = (ang + config[2*i+1]) % (2*Math.PI);
 		x = xp + config[2*i] * Math.cos(ang);
 		y = yp + config[2*i] * Math.sin(ang);
-		System.out.println(config[2*i] + ", " + i);
+		// System.out.println(config[2*i] + ", " + i);
 		
 		rect[0][0] = xp + width*Math.cos(ang + Math.PI / 2);
 		rect[0][1] = yp + width*Math.sin(ang + Math.PI / 2);
@@ -126,6 +126,11 @@ public class ArmRobot {
 
 	@Override
 	public String toString() {
-		return new String("config " + config[0] + ", " + config[1]);
+		String strConfig = new String();
+		for (int i = 0; i < config.length; ++i) {
+			strConfig += String.valueOf(config[i]);
+			strConfig += " ";
+		}
+		return strConfig;
 	}
 }

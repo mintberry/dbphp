@@ -9,7 +9,7 @@ package assignment_robots;
 class SteeredCar {
 
 	// The control set;
-	protected double[][] control = {{1, 0, 0}, {-1, 0, 0}, {1, 0, 1}, {1, 0, -1}, {-1, 0, 1}, {-1, 0, -1}};
+	protected double[][] control = {{10, 0, 0}, {-10, 0, 0}, {10, 0, 10}, {10, 0, -10}, {-10, 0, 10}, {-10, 0, -10}};
 
 	// Get a control;
 	public double[] getControl(int i) {

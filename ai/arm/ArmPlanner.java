@@ -47,25 +47,26 @@ public class ArmPlanner extends InformedSearchProblem	 {
 	public void xRoadMap(int N, int k){
 		// sample configs including start and goal
 		int links = this.start.length / 2 - 1;
-		double length = start[2];// length of first link
-		ConfigNode startNode = new ConfigNode(this.start, links, 0);
+		double length = start[2];// length of first link, can vary
+		startNode = new ConfigNode(this.start, links, 0); // startNode inherited
 		ConfigNode goalNode = new ConfigNode(this.goal, links, 0);
 
-		components.put(startNode, 0);
+		components.put((ConfigNode)startNode, 0);
 		components.put(goalNode, 1);
 
-		if (!world.armCollision(startNode.armConfig) && !world.armCollision(goalNode.armConfig)) {
-			roadMap.put(startNode, new HashSet<ConfigNode>());
+		if (!world.armCollision(((ConfigNode)startNode).armConfig) && !world.armCollision(goalNode.armConfig)) {
+			roadMap.put((ConfigNode)startNode, new HashSet<ConfigNode>());
 			roadMap.put(goalNode, new HashSet<ConfigNode>());
 
 
 			// 
 			for (int i = 2; i < N;) {
-				double[] config = randomConfig(links, ArmDriver.window_width, ArmDriver.window_height, length);
-				ConfigNode node = new ConfigNode(config, links, 0);
+				double[] config = randomConfig(links, ArmDriver.window_width, ArmDriver.window_height, this.start);
+				ArmRobot ar = new ArmRobot(links);
+				ar.set(config);
 				// check if this config collide with obs
-				if (!world.armCollision(node.armConfig)) {
-
+				if (!world.armCollision(ar)) {
+					ConfigNode node = new ConfigNode(config, links, 0);
 					roadMap.put(node, new HashSet<ConfigNode>());
 
 					components.put(node, i);
@@ -75,19 +76,25 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 			// init uf now!
 			this.uf = new UnionFind<ConfigNode>(components);
+			int i = 0;
 
 			// connect vertices
 			for (ConfigNode node: roadMap.keySet()) {
 				List<ConfigNode> neighbours = kNearest(node, k);
+				ConfigNode temp = new ConfigNode(node.armConfig.config, links, 0);
 				for (ConfigNode neighbour: neighbours) {
-					if (!world.armCollisionPath(node.armConfig, node.armConfig.config, neighbour.armConfig.config)) {
+					if (!uf.find(node, neighbour) &&
+						!world.armCollisionPath(temp.armConfig, node.armConfig.config, neighbour.armConfig.config)) {
 						// add edge, connected
 						roadMap.get(node).add(neighbour);
 						roadMap.get(neighbour).add(node);
 
+						uf.unite(node, neighbour);
+						i++;
 					}
 				}
 			}
+			System.out.println(i);
 		} else {
 			System.out.println("start or goal error");
 		}
@@ -95,13 +102,13 @@ public class ArmPlanner extends InformedSearchProblem	 {
 	}
 
 	// sample a config
-	private double[] randomConfig(int links, double width, double height, double length){
+	private double[] randomConfig(int links, double width, double height, double[] startConfig){
 		double[] config = new double[links * 2 + 2];
 		config[0] = width * Math.random();
 		config[1] = height * Math.random();
 		for (int i = 1; i <= links; i++) {
 			// need to sample arm length?
-			config[2*i] = length;
+			config[2*i] = startConfig[2 * i];
 			config[2*i+1] = Math.random() * (Math.PI * 2.0);
 		}
 		return config;
@@ -109,8 +116,7 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 	// k nearest neighbours
 	private List<ConfigNode> kNearest(ConfigNode node, int k){
-		List<ConfigNode> nearests = new LinkedList<ConfigNode>();
-		ArrayList<ConfigNode> neighbours = new ArrayList<ConfigNode>();
+		ArrayList<ConfigNode> neighbours = new ArrayList<ConfigNode>(roadMap.keySet());
 
 		// sort the collection
 		Collections.sort(neighbours, new Comparator<ConfigNode>(){
@@ -121,7 +127,12 @@ public class ArmPlanner extends InformedSearchProblem	 {
 	    }
 		});
 
-		return neighbours;
+		// if (neighbours.get(0).distance(node.armConfig.config) < neighbours.get(1).distance(node.armConfig.config) && 
+		// 	neighbours.get(1).distance(node.armConfig.config) < neighbours.get(2).distance(node.armConfig.config)) {
+		// 	System.out.println("HAHA");
+		// }
+
+		return neighbours.subList(0, k);
 	}
 
 	// node class used by searches.  Searches themselves are implemented
@@ -196,8 +207,8 @@ public class ArmPlanner extends InformedSearchProblem	 {
 
 		@Override
 		public double heuristic() {
-			// just uniform cost search
-			return 0;
+			// just uniform cost search, or the distance to the goal?
+			return this.distance(goal);
 		}
 
 		@Override
@@ -255,53 +266,4 @@ public class ArmPlanner extends InformedSearchProblem	 {
 			}
 		}
 	}
-
-	// Get the time to move from configuration 1 to configuration 2;
-	// two configurations must be valid configurations for the arm; 
-	public double moveInParallel(double[] config1, double[] config2) {
-		if (config1.length != config2.length) {
-			System.exit(1);
-		}
-		if (config1.length % 2 != 0) {
-			System.exit(1);
-		}
-		
-		double d = 0;
-		double maxt = 0;
-		
-		for (int i = 0; i < (config1.length/2); i++) {
-			if (i == 0) {
-				d = Math.sqrt(Math.pow(config1[0]-config2[0], 2)+Math.pow(config1[1]-config2[1], 2));
-				
-			}
-			else {
-				d = Math.abs(config1[2*i+1]-config2[2*i+1]);
-			}
-			if (d > maxt) {
-				maxt = d;
-			}
-			
-		}
-		
-		
-		return maxt;
-	}
-	
-	// Given two configurations, get the "path" between configurations;
-	// return is a double array with the same length as configurations;
-	// path[i] is the velocity of component config[i];
-	// basically, given certain time duration: step, path[i]*step 
-	// is the movement of component config[i] during step;
-	public double[] getPath (double[] config1, double[] config2) {
-		double time = moveInParallel(config1, config2);
-		double[] path = new double[config1.length];
-		
-		for (int i = 0; i < config1.length; i++) {
-			path[i] = (config2[i] - config1[i]) / time;
-		}
-		
-		return path;
-	}
-	
-	
  }
