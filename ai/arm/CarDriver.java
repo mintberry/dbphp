@@ -136,7 +136,7 @@ public class CarDriver extends Application {
 		// plotCarRobot(g, car, state1);
 		CarPlanner cp = new CarPlanner(state1, state2, w);
 
-		cp.xRRT(900, 3.0, 0.0);
+		cp.xRRT(900, 3.0, 20.0);
 		for (CarState cs: cp.rrt.keySet()) {
 			plotCarRobot(g, car, cs, Color.RED, Color.PINK);
 		}

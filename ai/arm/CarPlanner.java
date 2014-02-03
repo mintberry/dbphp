@@ -12,6 +12,8 @@ import java.util.ArrayList;
 // can get the path between configurations;
 
 public class CarPlanner {
+	private static final double goal_prob = 0.3;
+
 	CarState start, goal;
 	protected World world;
 
@@ -37,7 +39,7 @@ public class CarPlanner {
 		CarRobot cr = new CarRobot();
 		for (int i = 1; i < k;) {
 			// each time randomly pick a state or use the goal
-			if (diff == 0.0) {
+			if (diff == 0.0 || Math.random() > goal_prob) {// goal_prob is to sample target randomly in case there are obs
 				do {
 					rand = randomState(CarDriver.window_width, CarDriver.window_height);
 					cr.set(rand);
