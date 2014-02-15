@@ -73,7 +73,7 @@ public class ChessClient extends Application {
 		// Movemakers handle getting input from an AI, from the keyboard, or
 		// from a server, depending on which type is used.
 		moveMaker = new MoveMaker[2];
-		moveMaker[Chess.BLACK] = new AIMoveMaker(new RandomAI());
+		moveMaker[Chess.BLACK] = new AIMoveMaker(new SimpleAI());
 		moveMaker[Chess.WHITE] = new TextFieldMoveMaker();
 
 		VBox vb = new VBox();

@@ -8,7 +8,7 @@ import chesspresso.position.Position;
 import chesspresso.move.IllegalMoveException;
 
 public class SimpleAI implements ChessAI {
-    private static final int depthLimit = 10;
+    private static final int depthLimit = 3;
     private static final double CHESS_MAX = 10000.0;
     private static final double CHESS_MIN = -10000.0;    
     private static final double CHESS_WIN = CHESS_MAX / 3;
@@ -32,7 +32,10 @@ public class SimpleAI implements ChessAI {
                 System.out.println("SimpleAI: illegal move!");
             }
             depth++;
-            // System.out.println("hahaha: " + depth + " " + this.nodesExplored);
+
+            if (dec.move == 0) {
+                System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
+            }
         }
         
         return dec.move;// check 0
@@ -40,11 +43,12 @@ public class SimpleAI implements ChessAI {
 
     private Decision maxVal(Position position, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MIN;
-        short move = -1;
+        short move = 0;
         if (curDepth >= maxDepth) {// base case 1
             // return utility value of current position
             mv = utility(position);
-            mv = evaluation(position);
+            // System.out.println("SimpleAI: " + String.valueOf(move));
+            // mv = evaluation(position);
         } else {
             if (position.isTerminal()) {// base case 2
                 mv = utility(position);
@@ -57,11 +61,12 @@ public class SimpleAI implements ChessAI {
                     temp = minVal(newPos, curDepth + 1, maxDepth);
                     if (mv < temp.value) {
                         mv = temp.value;
-                        move = temp.move;
+                        move = moves[i];
                     }
                 }
             }
         }
+
         return new Decision(move, mv);
     }
 
@@ -99,7 +104,7 @@ public class SimpleAI implements ChessAI {
         if (!position.isTerminal()){// non-terminal
             uv = (Math.random() * 2 - 1) * CHESS_WIN;
         } else if (!isDraw(position)) {// win
-            uv = CHESS_WIN;// depends on player
+            uv = (this.player == position.getToPlay()? CHESS_LOSE: CHESS_WIN);// depends on player
         }
         return uv;
     }
