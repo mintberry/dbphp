@@ -8,7 +8,7 @@ import chesspresso.position.Position;
 import chesspresso.move.IllegalMoveException;
 
 public class SimpleAI implements ChessAI {
-    private static final int depthLimit = 3;
+    private static final int depthLimit = 5;
     private static final double CHESS_MAX = 10000.0;
     private static final double CHESS_MIN = -10000.0;    
     private static final double CHESS_WIN = CHESS_MAX / 3;
@@ -27,7 +27,8 @@ public class SimpleAI implements ChessAI {
 
         while(depth <= depthLimit) {
             try{
-                dec = maxVal(position, 0, depth);
+                dec = maxVal_p(position, CHESS_MIN, CHESS_MAX, 0, depth);
+                // dec = maxVal(position, 0, depth);
             } catch (IllegalMoveException e) {
                 System.out.println("SimpleAI: illegal move!");
             }
@@ -89,7 +90,74 @@ public class SimpleAI implements ChessAI {
                     temp = maxVal(newPos, curDepth + 1, maxDepth);
                     if (mv > temp.value) {
                         mv = temp.value;
-                        move = temp.move;
+                        move = moves[i];
+                    }
+                }
+            }
+        }
+        return new Decision(move, mv);
+    }
+
+    // pruning methods for minimax
+    private Decision maxVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
+        double mv = CHESS_MIN;
+        short move = 0;
+        if (curDepth >= maxDepth) {// base case 1
+            // return utility value of current position
+            mv = utility(position);
+            // System.out.println("SimpleAI: " + String.valueOf(move));
+            // mv = evaluation(position);
+        } else {
+            if (position.isTerminal()) {// base case 2
+                mv = utility(position);
+            } else { // recursive case
+                short [] moves = position.getAllMoves();
+                Decision temp;
+                for (int i = 0; i < moves.length; ++i) {
+                    Position newPos = new Position(position);
+                    newPos.doMove(moves[i]);
+                    temp = minVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    if (mv < temp.value) {// only do this if mv is updated
+                        mv = temp.value;
+                        move = moves[i];
+
+                        if (mv >= beta) {
+                            return new Decision(move, mv);
+                        }
+                        alpha = Math.max(alpha, mv);
+                    }
+                }
+            }
+        }
+
+        return new Decision(move, mv);
+    }
+
+    private Decision minVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
+        double mv = CHESS_MAX;
+        short move = 0;
+        if (curDepth >= maxDepth) {// base case 1
+            // return utility value of current position
+            mv = utility(position);
+            // mv = evaluation(position);
+        } else {
+            if (position.isTerminal()) {// base case 2
+                mv = utility(position);
+            } else { // recursive case
+                short [] moves = position.getAllMoves();
+                Decision temp;
+                for (int i = 0; i < moves.length; ++i) {
+                    Position newPos = new Position(position);
+                    newPos.doMove(moves[i]);
+                    temp = maxVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    if (mv > temp.value) {// only do this if mv is updated
+                        mv = temp.value;
+                        move = moves[i];
+
+                        if (mv <= alpha) {
+                            return new Decision(move, mv);
+                        }
+                        beta = Math.min(beta, mv);
                     }
                 }
             }
