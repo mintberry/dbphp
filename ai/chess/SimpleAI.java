@@ -4,11 +4,12 @@ import java.util.Random;
 import java.util.Collections;
 import java.lang.Math;
 
+import chesspresso.Chess;
 import chesspresso.position.Position;
 import chesspresso.move.IllegalMoveException;
 
 public class SimpleAI implements ChessAI {
-    private static final int depthLimit = 5;
+    private static final int depthLimit = 5;// 6 for pruning, otherwise 4
     private static final double CHESS_MAX = 10000.0;
     private static final double CHESS_MIN = -10000.0;    
     private static final double CHESS_WIN = CHESS_MAX / 3;
@@ -27,8 +28,12 @@ public class SimpleAI implements ChessAI {
 
         while(depth <= depthLimit) {
             try{
+                // best move of last iteration can be used
                 dec = maxVal_p(position, CHESS_MIN, CHESS_MAX, 0, depth);
                 // dec = maxVal(position, 0, depth);
+                if (dec.value == CHESS_WIN) {
+                    break;
+                }
             } catch (IllegalMoveException e) {
                 System.out.println("SimpleAI: illegal move!");
             }
@@ -38,6 +43,7 @@ public class SimpleAI implements ChessAI {
                 System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
             }
         }
+        // System.out.println("material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
         
         return dec.move;// check 0
     }
@@ -102,7 +108,7 @@ public class SimpleAI implements ChessAI {
     private Decision maxVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MIN;
         short move = 0;
-        if (curDepth >= maxDepth) {// base case 1
+        if (curDepth >= maxDepth) {// base case 1, cut off
             // return utility value of current position
             mv = utility(position);
             // System.out.println("SimpleAI: " + String.valueOf(move));
@@ -136,7 +142,7 @@ public class SimpleAI implements ChessAI {
     private Decision minVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MAX;
         short move = 0;
-        if (curDepth >= maxDepth) {// base case 1
+        if (curDepth >= maxDepth) {// base case 1, cut off
             // return utility value of current position
             mv = utility(position);
             // mv = evaluation(position);
@@ -170,7 +176,8 @@ public class SimpleAI implements ChessAI {
         // and random value for non-terminals
         double uv = 0.0;// default for draw
         if (!position.isTerminal()){// non-terminal
-            uv = (Math.random() * 2 - 1) * CHESS_WIN;
+            // uv = (Math.random() * 2 - 1) * CHESS_WIN;
+            uv = evaluation(position);
         } else if (!isDraw(position)) {// win
             uv = (this.player == position.getToPlay()? CHESS_LOSE: CHESS_WIN);// depends on player
         }
@@ -179,11 +186,15 @@ public class SimpleAI implements ChessAI {
 
     private double evaluation(Position position){
         // return heuristic value for non-terminals
-        return 0.0;
+        // use either domination or material
+        double eval = position.getDomination() * (player == Chess.WHITE?1:-1);// + white, - black
+        // what's the max domination value?
+        return eval;
     }
 
     private boolean isDraw(Position position){
         // just stalemate and 50-move for now
+        // FIXME
         return position.isStaleMate() || position.getHalfMoveClock() >= 100;
     }
 
