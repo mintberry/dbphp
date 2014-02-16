@@ -1,6 +1,9 @@
 package chai;
 
 import java.util.Random;
+import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
 import java.util.Collections;
 import java.lang.Math;
 
@@ -15,23 +18,36 @@ public class SimpleAI implements ChessAI {
     private static final double CHESS_WIN = CHESS_MAX / 3;
     private static final double CHESS_LOSE = CHESS_MIN / 3;
 
+    private HashMap<Long, Decision> transpositionTable;// back chain with this hashmap
+    private List<Short> killerMoves;// stores the path from previous search
+    private int explored;
+
     protected int player; // the player always wants max
+
+    public SimpleAI(){
+        transpositionTable = new HashMap<Long, Decision>();
+    }
 
     public short getMove(Position position){
         // short [] moves = position.getAllMoves();
         // short move = moves[new Random().nextInt(moves.length)];
 
         int depth = 1;
+        explored = 0;
         short bestMove;
         player = position.getToPlay();
         Decision dec = new Decision();
 
         while(depth <= depthLimit) {
+
+            killerMoves = forwardchain(position);
+            transpositionTable.clear();
+
             try{
-                // best move of last iteration can be used
                 dec = maxVal_p(position, CHESS_MIN, CHESS_MAX, 0, depth);
                 // dec = maxVal(position, 0, depth);
-                if (dec.value == CHESS_WIN) {
+
+                if (dec.value == CHESS_WIN) {// if a move results in a mate
                     break;
                 }
             } catch (IllegalMoveException e) {
@@ -44,13 +60,14 @@ public class SimpleAI implements ChessAI {
             }
         }
         // System.out.println("material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
-        
+        System.out.println("nodes explored: " + String.valueOf(explored));
         return dec.move;// check 0
     }
 
     private Decision maxVal(Position position, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MIN;
         short move = 0;
+        explored++;
         if (curDepth >= maxDepth) {// base case 1
             // return utility value of current position
             mv = utility(position);
@@ -80,6 +97,7 @@ public class SimpleAI implements ChessAI {
     private Decision minVal(Position position, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MAX;
         short move = 0;
+        explored++;
         if (curDepth >= maxDepth) {// base case 1
             // return utility value of current position
             mv = utility(position);
@@ -108,10 +126,11 @@ public class SimpleAI implements ChessAI {
     private Decision maxVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MIN;
         short move = 0;
+        explored++;
         if (curDepth >= maxDepth) {// base case 1, cut off
             // return utility value of current position
             mv = utility(position);
-            // System.out.println("SimpleAI: " + String.valueOf(move));
+
             // mv = evaluation(position);
         } else {
             if (position.isTerminal()) {// base case 2
@@ -122,17 +141,23 @@ public class SimpleAI implements ChessAI {
                 for (int i = 0; i < moves.length; ++i) {
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
-                    temp = minVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    if (transpositionTable.containsKey(newPos.getHashCode())) {
+                        temp = transpositionTable.get(newPos.getHashCode());
+                    } else {
+                        temp = minVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    }
                     if (mv < temp.value) {// only do this if mv is updated
                         mv = temp.value;
                         move = moves[i];
 
                         if (mv >= beta) {
-                            return new Decision(move, mv);
+                            break;
                         }
                         alpha = Math.max(alpha, mv);
                     }
                 }
+                // update transposition table before return, only for non-terminal or cutoffs
+                transpositionTable.put(position.getHashCode(), new Decision(move, mv));
             }
         }
 
@@ -142,9 +167,11 @@ public class SimpleAI implements ChessAI {
     private Decision minVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
         double mv = CHESS_MAX;
         short move = 0;
+        explored++;
         if (curDepth >= maxDepth) {// base case 1, cut off
             // return utility value of current position
             mv = utility(position);
+
             // mv = evaluation(position);
         } else {
             if (position.isTerminal()) {// base case 2
@@ -155,19 +182,26 @@ public class SimpleAI implements ChessAI {
                 for (int i = 0; i < moves.length; ++i) {
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
-                    temp = maxVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    if (transpositionTable.containsKey(newPos.getHashCode())) {
+                        temp = transpositionTable.get(newPos.getHashCode());
+                    } else {
+                        temp = maxVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
+                    }
                     if (mv > temp.value) {// only do this if mv is updated
                         mv = temp.value;
                         move = moves[i];
 
                         if (mv <= alpha) {
-                            return new Decision(move, mv);
+                            break;
                         }
                         beta = Math.min(beta, mv);
                     }
                 }
+                // update transposition table before return, only for non-terminal or cutoffs
+                transpositionTable.put(position.getHashCode(), new Decision(move, mv));
             }
         }
+
         return new Decision(move, mv);
     }
 
@@ -196,6 +230,21 @@ public class SimpleAI implements ChessAI {
         // just stalemate and 50-move for now
         // FIXME
         return position.isStaleMate() || position.getHalfMoveClock() >= 100;
+    }
+
+    private List<Short> forwardchain(Position position){
+        LinkedList<Short> chain = new LinkedList<Short>();
+        Position pos = new Position(position);
+        while(transpositionTable.containsKey(pos.getHashCode())){
+            Short move = new Short(transpositionTable.get(pos.getHashCode()).move);
+            chain.add(move);
+            try{
+                pos.doMove(move.shortValue());
+            } catch (IllegalMoveException e) {
+                System.out.println("SimpleAI forwardchain: illegal move!");
+            }
+        }
+        return chain;
     }
 
     private class Decision{
