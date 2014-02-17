@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.lang.Math;
+import java.util.Arrays;
 
 import chesspresso.Chess;
 import chesspresso.position.Position;
@@ -40,6 +41,7 @@ public class SimpleAI implements ChessAI {
 
         while(depth <= depthLimit) {
 
+            // System.out.println("SimpleAI depth: " + String.valueOf(depth));
             killerMoves = forwardchain(position);
             transpositionTable.clear();
 
@@ -54,7 +56,6 @@ public class SimpleAI implements ChessAI {
                 System.out.println("SimpleAI: illegal move!");
             }
             depth++;
-
             if (dec.move == 0) {
                 System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
             }
@@ -127,6 +128,7 @@ public class SimpleAI implements ChessAI {
         double mv = CHESS_MIN;
         short move = 0;
         explored++;
+        
         if (curDepth >= maxDepth) {// base case 1, cut off
             // return utility value of current position
             mv = utility(position);
@@ -137,8 +139,20 @@ public class SimpleAI implements ChessAI {
                 mv = utility(position);
             } else { // recursive case
                 short [] moves = position.getAllMoves();
+
+                short swap = moves[0];
+                // swap the previous best move to first if there is one
+                // if (curDepth < killerMoves.size() && 0 <= Arrays.binarySearch(moves, killerMoves.get(curDepth).shortValue())) {
+                //     moves[0] = killerMoves.get(curDepth).shortValue();
+                // }
+
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
+
+                    if (moves[i] == moves[0] && i != 0) {
+                        moves[i] = swap;
+                    }
+
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
                     if (transpositionTable.containsKey(newPos.getHashCode())) {
@@ -178,8 +192,20 @@ public class SimpleAI implements ChessAI {
                 mv = utility(position);
             } else { // recursive case
                 short [] moves = position.getAllMoves();
+                
+                short swap = moves[0];
+                // swap the previous best move to first if there is one
+                // if (curDepth < killerMoves.size() && 0 <= Arrays.binarySearch(moves, killerMoves.get(curDepth).shortValue())) {
+                //     moves[0] = killerMoves.get(curDepth).shortValue();  
+                // }
+
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
+
+                    if (moves[i] == moves[0] && i != 0) {
+                        moves[i] = swap;
+                    }
+
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
                     if (transpositionTable.containsKey(newPos.getHashCode())) {
@@ -221,7 +247,7 @@ public class SimpleAI implements ChessAI {
     private double evaluation(Position position){
         // return heuristic value for non-terminals
         // use either domination or material
-        double eval = position.getDomination() * (player == Chess.WHITE?1:-1);// + white, - black
+        double eval = position.getDomination() * (player == position.getToPlay()?1:-1);// + white, - black
         // what's the max domination value?
         return eval;
     }
@@ -238,11 +264,13 @@ public class SimpleAI implements ChessAI {
         while(transpositionTable.containsKey(pos.getHashCode())){
             Short move = new Short(transpositionTable.get(pos.getHashCode()).move);
             chain.add(move);
+
             try{
                 pos.doMove(move.shortValue());
             } catch (IllegalMoveException e) {
                 System.out.println("SimpleAI forwardchain: illegal move!");
             }
+            // System.out.println("chaining: " + String.valueOf(chain.size()) + " " + String.valueOf(move.shortValue()));
         }
         return chain;
     }
