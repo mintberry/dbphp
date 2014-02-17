@@ -7,26 +7,57 @@ import java.util.LinkedList;
 import java.util.Collections;
 import java.lang.Math;
 import java.util.Arrays;
+import java.net.URL;
+import java.io.File;
+import java.io.FileInputStream;
 
 import chesspresso.Chess;
+import chesspresso.game.Game;
+import chesspresso.pgn.*;
 import chesspresso.position.Position;
 import chesspresso.move.IllegalMoveException;
 
 public class SimpleAI implements ChessAI {
-    private static final int depthLimit = 5;// 6 for pruning, otherwise 4
-    private static final double CHESS_MAX = 10000.0;
-    private static final double CHESS_MIN = -10000.0;    
+    // private static final int depthLimit = 5;// 6 for pruning, otherwise 4
+    private int depthLimit;
+    private static final double CHESS_MAX = 100000.0;
+    private static final double CHESS_MIN = -100000.0;    
     private static final double CHESS_WIN = CHESS_MAX / 3;
     private static final double CHESS_LOSE = CHESS_MIN / 3;
 
     private HashMap<Long, Decision> transpositionTable;// back chain with this hashmap
     private List<Short> killerMoves;// stores the path from previous search
+    private int chainCounter;
+
+    private List<Game> playBook;
+
     private int explored;
 
     protected int player; // the player always wants max
 
     public SimpleAI(){
         transpositionTable = new HashMap<Long, Decision>();
+        playBook = new LinkedList<Game>();
+        depthLimit = 5;
+    }
+
+    public SimpleAI(int depth){
+        this();
+        depthLimit = depth;
+    }
+
+    private void readBook() throws Exception{
+        URL url = this.getClass().getResource("../book.pgn");
+            
+        File f = new File(url.toURI());
+        FileInputStream fis = new FileInputStream(f);
+        PGNReader pgnReader = new PGNReader(fis, "../book.pgn");
+                    
+        //hack: we know there are only 120 games in the opening book
+        for (int i = 0; i < 120; i++)  {
+          Game g = new Game(pgnReader.parseGame().getModel());
+          playBook.add(g);
+        }
     }
 
     public short getMove(Position position){
@@ -35,9 +66,10 @@ public class SimpleAI implements ChessAI {
 
         int depth = 1;
         explored = 0;
-        short bestMove;
         player = position.getToPlay();
         Decision dec = new Decision();
+
+        // System.out.println("1material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
 
         while(depth <= depthLimit) {
 
@@ -60,7 +92,11 @@ public class SimpleAI implements ChessAI {
                 System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
             }
         }
-        // System.out.println("material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
+
+        // Position pos = new Position(position);
+        // try{pos.doMove(dec.move);}catch(IllegalMoveException e){}
+        // System.out.println("2material: " + String.valueOf(pos.getMaterial() + ", domination: " + String.valueOf(pos.getDomination())));
+
         System.out.println("nodes explored: " + String.valueOf(explored));
         return dec.move;// check 0
     }
@@ -142,9 +178,10 @@ public class SimpleAI implements ChessAI {
 
                 short swap = moves[0];
                 // swap the previous best move to first if there is one
-                // if (curDepth < killerMoves.size() && 0 <= Arrays.binarySearch(moves, killerMoves.get(curDepth).shortValue())) {
-                //     moves[0] = killerMoves.get(curDepth).shortValue();
-                // }
+                if (curDepth < killerMoves.size() && chainCounter > 0) {
+                    moves[0] = killerMoves.get(curDepth).shortValue();
+                    chainCounter--;
+                }
 
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
@@ -195,9 +232,10 @@ public class SimpleAI implements ChessAI {
                 
                 short swap = moves[0];
                 // swap the previous best move to first if there is one
-                // if (curDepth < killerMoves.size() && 0 <= Arrays.binarySearch(moves, killerMoves.get(curDepth).shortValue())) {
-                //     moves[0] = killerMoves.get(curDepth).shortValue();  
-                // }
+                if (curDepth < killerMoves.size() && chainCounter > 0) {
+                    moves[0] = killerMoves.get(curDepth).shortValue();  
+                    chainCounter--;
+                }
 
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
@@ -248,7 +286,6 @@ public class SimpleAI implements ChessAI {
         // return heuristic value for non-terminals
         // use either domination or material
         double eval = position.getDomination() * (player == position.getToPlay()?1:-1);// + white, - black
-        // what's the max domination value?
         return eval;
     }
 
@@ -272,6 +309,7 @@ public class SimpleAI implements ChessAI {
             }
             // System.out.println("chaining: " + String.valueOf(chain.size()) + " " + String.valueOf(move.shortValue()));
         }
+        chainCounter = chain.size();
         return chain;
     }
 

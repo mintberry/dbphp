@@ -15,9 +15,10 @@ public class ChessGame {
 	public ChessGame() {
 		// position = new Position(
 		// 		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		// position = new Position(
+		// 		"3rk2r/ppp3pp/2n1p3/4p3/7P/n2bP2R/P4PP1/1R1K1B2 w k - 0 21");
 		position = new Position(
-				"3rk2r/ppp3pp/2n1p3/4p3/7P/n2bP2R/P4PP1/1R1K1B2 w k - 0 21");
-
+				"8/8/p7/4K3/3Q2p1/2k5/p7/8 b - - 3 50");
 	}
 
 	public int getStone(int col, int row) {
