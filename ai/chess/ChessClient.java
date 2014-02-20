@@ -73,8 +73,8 @@ public class ChessClient extends Application {
 		// Movemakers handle getting input from an AI, from the keyboard, or
 		// from a server, depending on which type is used.
 		moveMaker = new MoveMaker[2];
-		// moveMaker[Chess.BLACK] = new AIMoveMaker(new SimpleAI());
-		// moveMaker[Chess.WHITE] = new TextFieldMoveMaker();
+		// moveMaker[Chess.WHITE] = new AIMoveMaker(new SimpleAI(5));
+		// moveMaker[Chess.BLACK] = new TextFieldMoveMaker();
 		moveMaker[Chess.BLACK] = new AIMoveMaker(new SimpleAI(4));
 		moveMaker[Chess.WHITE] = new AIMoveMaker(new SimpleAI(5));
 
@@ -90,7 +90,7 @@ public class ChessClient extends Application {
 		primaryStage.show();
 
 		// sets the game world's game loop (Timeline)
-		Timeline timeline = new Timeline(5.0);
+		Timeline timeline = new Timeline(1.0);
 		timeline.setCycleCount(Timeline.INDEFINITE);
 		timeline.getKeyFrames().add(
 				new KeyFrame(Duration.seconds(.05), new GameHandler()));

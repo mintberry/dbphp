@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.net.URL;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Timer;
+import java.util.Collections;
 
 import chesspresso.Chess;
 import chesspresso.game.Game;
@@ -24,7 +26,9 @@ public class SimpleAI implements ChessAI {
     private static final double CHESS_MIN = -100000.0;    
     private static final double CHESS_WIN = CHESS_MAX / 3;
     private static final double CHESS_LOSE = CHESS_MIN / 3;
+    private static final int TEXT_MOVE = 6;
 
+    private short bestMove;
     private HashMap<Long, Decision> transpositionTable;// back chain with this hashmap
     private List<Short> killerMoves;// stores the path from previous search
     private int chainCounter;
@@ -39,6 +43,12 @@ public class SimpleAI implements ChessAI {
         transpositionTable = new HashMap<Long, Decision>();
         playBook = new LinkedList<Game>();
         depthLimit = 5;
+        try{
+            readBook();
+        } catch (Exception e){
+            System.out.println("Read book error: " + e.toString());
+            return;
+        }
     }
 
     public SimpleAI(int depth){
@@ -47,17 +57,33 @@ public class SimpleAI implements ChessAI {
     }
 
     private void readBook() throws Exception{
-        URL url = this.getClass().getResource("../book.pgn");
-            
+        URL url = this.getClass().getResource("book.pgn");
+
         File f = new File(url.toURI());
-        FileInputStream fis = new FileInputStream(f);
-        PGNReader pgnReader = new PGNReader(fis, "../book.pgn");
-                    
+        FileInputStream fis = new FileInputStream(f);            
+        PGNReader pgnReader = new PGNReader(fis, "book.pgn");
+
         //hack: we know there are only 120 games in the opening book
         for (int i = 0; i < 120; i++)  {
           Game g = new Game(pgnReader.parseGame().getModel());
           playBook.add(g);
         }
+    }
+
+    private short applyBook(Position position){
+        short move = 0;
+        // System.out.println("pos: " + playBook.size());
+        Collections.shuffle(playBook, new Random(System.currentTimeMillis()));
+        for (Game g: playBook) {
+            if (g.containsPosition(position)) {// if current position is found in this book
+                g.gotoPosition(position);
+                System.out.println("move from book " + g.getNextShortMove());
+                move = g.getNextShortMove();
+                break;
+            }
+        }
+        // there can be no match
+        return move;
     }
 
     public short getMove(Position position){
@@ -66,39 +92,45 @@ public class SimpleAI implements ChessAI {
 
         int depth = 1;
         explored = 0;
+        bestMove = 0;
         player = position.getToPlay();
         Decision dec = new Decision();
 
         // System.out.println("1material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
 
-        while(depth <= depthLimit) {
+        if (position.getPlyNumber() <= TEXT_MOVE) {// use move in text instead of search
+            bestMove = applyBook(position);
+        } 
+        if (bestMove == 0) {
 
-            // System.out.println("SimpleAI depth: " + String.valueOf(depth));
-            killerMoves = forwardchain(position);
-            transpositionTable.clear();
+            while(depth <= depthLimit) {
 
-            try{
-                dec = maxVal_p(position, CHESS_MIN, CHESS_MAX, 0, depth);
-                // dec = maxVal(position, 0, depth);
+                // System.out.println("SimpleAI depth: " + String.valueOf(depth));
+                // killerMoves = forwardchain(position);
+                // transpositionTable.clear();
 
-                if (dec.value == CHESS_WIN) {// if a move results in a mate
-                    break;
+                try{
+                    dec = maxVal_p(position, CHESS_MIN, CHESS_MAX, 0, depth);
+                    // dec = maxVal(position, 0, depth);
+                    bestMove = dec.move;
+                    if (dec.value == CHESS_WIN) {// if a move results in a mate
+                        break;
+                    }
+                } catch (IllegalMoveException e) {
+                    System.out.println("SimpleAI: illegal move!");
                 }
-            } catch (IllegalMoveException e) {
-                System.out.println("SimpleAI: illegal move!");
-            }
-            depth++;
-            if (dec.move == 0) {
-                System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
+                depth++;
+                if (dec.move == 0) {
+                    System.out.println("SimpleAI: failed to decide! " + String.valueOf(depth));
+                }
             }
         }
-
         // Position pos = new Position(position);
         // try{pos.doMove(dec.move);}catch(IllegalMoveException e){}
         // System.out.println("2material: " + String.valueOf(pos.getMaterial() + ", domination: " + String.valueOf(pos.getDomination())));
 
         System.out.println("nodes explored: " + String.valueOf(explored));
-        return dec.move;// check 0
+        return bestMove;// check 0
     }
 
     private Decision maxVal(Position position, int curDepth, int maxDepth) throws IllegalMoveException{
@@ -128,7 +160,7 @@ public class SimpleAI implements ChessAI {
             }
         }
 
-        return new Decision(move, mv);
+        return new Decision(move, mv, 0);
     }
 
     private Decision minVal(Position position, int curDepth, int maxDepth) throws IllegalMoveException{
@@ -156,7 +188,7 @@ public class SimpleAI implements ChessAI {
                 }
             }
         }
-        return new Decision(move, mv);
+        return new Decision(move, mv, 0);
     }
 
     // pruning methods for minimax
@@ -178,10 +210,10 @@ public class SimpleAI implements ChessAI {
 
                 short swap = moves[0];
                 // swap the previous best move to first if there is one
-                if (curDepth < killerMoves.size() && chainCounter > 0) {
-                    moves[0] = killerMoves.get(curDepth).shortValue();
-                    chainCounter--;
-                }
+                // if (curDepth < killerMoves.size() && chainCounter > 0) {
+                //     moves[0] = killerMoves.get(curDepth).shortValue();
+                //     chainCounter--;
+                // }
 
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
@@ -192,7 +224,8 @@ public class SimpleAI implements ChessAI {
 
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
-                    if (transpositionTable.containsKey(newPos.getHashCode())) {
+                    if (transpositionTable.containsKey(newPos.getHashCode()) && 
+                        maxDepth - curDepth - 1 <= transpositionTable.get(newPos.getHashCode()).height) {
                         temp = transpositionTable.get(newPos.getHashCode());
                     } else {
                         temp = minVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
@@ -208,11 +241,14 @@ public class SimpleAI implements ChessAI {
                     }
                 }
                 // update transposition table before return, only for non-terminal or cutoffs
-                transpositionTable.put(position.getHashCode(), new Decision(move, mv));
+                if (!transpositionTable.containsKey(position.getHashCode()) || 
+                    maxDepth - curDepth > transpositionTable.get(position.getHashCode()).height) {
+                    transpositionTable.put(position.getHashCode(), new Decision(move, mv, maxDepth - curDepth));   
+                }
             }
         }
 
-        return new Decision(move, mv);
+        return new Decision(move, mv, maxDepth - curDepth);
     }
 
     private Decision minVal_p(Position position, double alpha, double beta, int curDepth, int maxDepth) throws IllegalMoveException{
@@ -232,10 +268,10 @@ public class SimpleAI implements ChessAI {
                 
                 short swap = moves[0];
                 // swap the previous best move to first if there is one
-                if (curDepth < killerMoves.size() && chainCounter > 0) {
-                    moves[0] = killerMoves.get(curDepth).shortValue();  
-                    chainCounter--;
-                }
+                // if (curDepth < killerMoves.size() && chainCounter > 0) {
+                //     moves[0] = killerMoves.get(curDepth).shortValue();  
+                //     chainCounter--;
+                // }
 
                 Decision temp;
                 for (int i = 0; i < moves.length; ++i) {
@@ -246,7 +282,8 @@ public class SimpleAI implements ChessAI {
 
                     Position newPos = new Position(position);
                     newPos.doMove(moves[i]);
-                    if (transpositionTable.containsKey(newPos.getHashCode())) {
+                    if (transpositionTable.containsKey(newPos.getHashCode()) && 
+                        maxDepth - curDepth - 1 <= transpositionTable.get(newPos.getHashCode()).height) {
                         temp = transpositionTable.get(newPos.getHashCode());
                     } else {
                         temp = maxVal_p(newPos, alpha, beta, curDepth + 1, maxDepth);
@@ -262,11 +299,14 @@ public class SimpleAI implements ChessAI {
                     }
                 }
                 // update transposition table before return, only for non-terminal or cutoffs
-                transpositionTable.put(position.getHashCode(), new Decision(move, mv));
+                if (!transpositionTable.containsKey(position.getHashCode()) || 
+                    maxDepth - curDepth > transpositionTable.get(position.getHashCode()).height) {
+                    transpositionTable.put(position.getHashCode(), new Decision(move, mv, maxDepth - curDepth));   
+                }
             }
         }
 
-        return new Decision(move, mv);
+        return new Decision(move, mv, maxDepth - curDepth);
     }
 
     private double utility(Position position){
@@ -285,13 +325,15 @@ public class SimpleAI implements ChessAI {
     private double evaluation(Position position){
         // return heuristic value for non-terminals
         // use either domination or material
-        double eval = position.getDomination() * (player == position.getToPlay()?1:-1);// + white, - black
+        double eval = (position.getDomination() + position.getMaterial())
+            * (player == position.getToPlay()?1:-1);// + white, - black
         return eval;
     }
 
     private boolean isDraw(Position position){
         // just stalemate and 50-move for now
         // FIXME
+        // return position.isTerminal() && !position.isMate();
         return position.isStaleMate() || position.getHalfMoveClock() >= 100;
     }
 
@@ -316,15 +358,18 @@ public class SimpleAI implements ChessAI {
     private class Decision{
         protected short move;
         protected double value;
+        protected int height;// depth to cut off
 
         public Decision(){
             move = 0;
             value = 0;
+            height = 0;
         }
 
-        public Decision(short move, double value){
+        public Decision(short move, double value, int height){
             this.move = move;
             this.value = value;
+            this.height = height;
         }
     }
 }
