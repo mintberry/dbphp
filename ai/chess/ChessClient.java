@@ -26,7 +26,7 @@ public class ChessClient extends Application {
 			"Welcome to CS 76 chess.  Moves can be made using algebraic notation;"
 			+ " for example the command c2c3 would move the piece at c2 to c3.  \n";
 		
-	
+	Timeline timeline;
 	TextField commandField;
 	TextArea logArea;
 	
@@ -73,9 +73,9 @@ public class ChessClient extends Application {
 		// Movemakers handle getting input from an AI, from the keyboard, or
 		// from a server, depending on which type is used.
 		moveMaker = new MoveMaker[2];
-		moveMaker[Chess.WHITE] = new AIMoveMaker(new SimpleAI(5));
+		moveMaker[Chess.WHITE] = new AIMoveMaker(new SimpleAI(6));
 		moveMaker[Chess.BLACK] = new TextFieldMoveMaker();
-		// moveMaker[Chess.BLACK] = new AIMoveMaker(new SimpleAI(4));
+		// moveMaker[Chess.BLACK] = new AIMoveMaker(new SimpleAI(5));
 		// moveMaker[Chess.WHITE] = new AIMoveMaker(new SimpleAI(5));
 
 		VBox vb = new VBox();
@@ -90,7 +90,7 @@ public class ChessClient extends Application {
 		primaryStage.show();
 
 		// sets the game world's game loop (Timeline)
-		Timeline timeline = new Timeline(1.0);
+		timeline = new Timeline(1.0);
 		timeline.setCycleCount(Timeline.INDEFINITE);
 		timeline.getKeyFrames().add(
 				new KeyFrame(Duration.seconds(.05), new GameHandler()));
@@ -121,6 +121,7 @@ public class ChessClient extends Application {
 			// terminal test
 			if (game.position.isTerminal()) {
 				System.out.println("game over");
+				timeline.stop();
 				return;
 			}
 

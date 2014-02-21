@@ -72,14 +72,21 @@ public class SimpleAI implements ChessAI {
         }
     }
 
-    private short applyBook(Position position){
+    private short applyBook(Position position) throws IllegalMoveException{
         short move = 0;
+        double domination = CHESS_MIN;
         // System.out.println("pos: " + playBook.size());
         for (Game g: playBook) {
             if (g.containsPosition(position)) {// if current position is found in this book
                 g.gotoPosition(position);
-                System.out.println("move from book " + g.getNextShortMove());
-                move = g.getNextShortMove();
+                Position pos = new Position(position);
+                pos.doMove(g.getNextShortMove());
+                double temp = pos.getDomination();
+                if (temp > domination) {
+                    // System.out.println("move from book " + g.getNextShortMove());
+                    move = g.getNextShortMove();  
+                    // domination = temp; 
+                }
                 break;
             }
         }
@@ -101,7 +108,7 @@ public class SimpleAI implements ChessAI {
         for(Map.Entry<Long, Decision> entry : transpositionTable.entrySet()) {
             Long key = entry.getKey();
             Decision value = entry.getValue();
-            oldTable.put(key, new Short(value.move));
+            // oldTable.put(key, new Short(value.move));
         }
         transpositionTable.clear();
 
@@ -110,7 +117,12 @@ public class SimpleAI implements ChessAI {
         // System.out.println("1material: " + String.valueOf(position.getMaterial() + ", domination: " + String.valueOf(position.getDomination())));
 
         if (position.getPlyNumber() <= TEXT_MOVE) {// use move in text instead of search
-            bestMove = applyBook(position);
+            try{
+                bestMove = applyBook(position);
+            } catch (IllegalMoveException e){
+                System.out.println("SimpleAI: illegal move playbook!");
+            }
+
         } 
         if (bestMove == 0) {
 
@@ -343,7 +355,7 @@ public class SimpleAI implements ChessAI {
         return eval;
     }
 
-    private boolean isDraw(Position position){
+    public static boolean isDraw(Position position){
         // just stalemate and 50-move for now
         // FIXME
         // return position.isTerminal() && !position.isMate();
