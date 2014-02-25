@@ -1,6 +1,7 @@
 package csp;
 
 import java.util.List;
+import csp.ConstraintSatisfactionProblem.*;
 
 public class MapColoringDriver {
 	public static void main(String args[]) {
@@ -13,6 +14,7 @@ public class MapColoringDriver {
 		// set up the "standard" 331 problem:
 		MapColoringProblem mcProblem = new MapColoringProblem();
 	
-		
+		Assignment assignment = mcProblem.basicBacktrackingSearch();
+		mcProblem.printResult(assignment);
 	}
 }

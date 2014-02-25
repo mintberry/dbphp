@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -29,79 +30,166 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 
 	// integer-based vars, domains and constraints
 	private Constraint constraint;
-	private HashMap<Integer, HashSet<Integer>> map;// variables and domains
+	private HashMap<List<Integer>, HashSet<List<Integer>>> constraintMap;
+	private HashMap<Integer, HashSet<Integer>> domainMap;// variables and domains, optional
 
-	// Lists as maps for string and integer
-	List<String> varNames; 
-	List<String> domainNames;
+	// bidirectional map
+	HashMap<String, Integer> var2int;
+	HashMap<String, Integer> domain2int; 
+
+	private int varCount;
 
 
 	public MapColoringProblem() {
+		List<String> lines = readFromFile("mapcoloring.csp");
 
+		List<String> varNames; 
+		List<String> domainNames;
 
-		varNames = new ArrayList<String>();
-		domainNames = new ArrayList<String>();
+		// get the domains and vars from file
+		varNames = new ArrayList<String>(Arrays.asList(lines.get(0).split(" ")));
+		domainNames = new ArrayList<String>(Arrays.asList(lines.get(1).split(" ")));
 
-		map = new HashMap<Integer, HashSet<Integer>>();
+		varCount = varNames.size();
+		// System.out.println("test: " + varCount);
 
-		constraint = new Constraint();
+		var2int = new HashMap<String, Integer>();
+		domain2int = new HashMap<String, Integer>();
 
+		buildMap(var2int, varNames);
+		buildMap(domain2int, domainNames);
 
-		assignment = this.assignmentInit();
+		// init domain for each var
+		domainMap = new HashMap<Integer, HashSet<Integer>>();
+		for (int i = 0; i < varCount; ++i) {
+			HashSet<Integer> domainSet = new HashSet<Integer>();
+			for (int j = 0; j < domainNames.size(); ++j) {
+				domainSet.add(new Integer(j));
+			}
+
+			domainMap.put(new Integer(i), domainSet);
+		}
+
+		// init constraint
+		constraintMap = new HashMap<List<Integer>, HashSet<List<Integer>>>();
+		for (int i = 2; i < lines.size(); ++i) {
+			atoiConstraint(lines.get(i));
+		}
+		// test
+		// for (Map.Entry<List<Integer>, HashSet<List<Integer>>> entry: constraintMap.entrySet()) {
+		// 	List<Integer> key = entry.getKey();
+		// 	HashSet<List<Integer>> value = entry.getValue();
+		// 	String out = new String();
+		// 	for (Integer i: key) {
+		// 		out += (i + " ");
+		// 	}
+		// 	out += ":";
+		// 	for (List<Integer> li: value) {
+		// 		for (Integer j: li) {
+		// 			out += (j + " ");	
+		// 		}
+		// 		out += ",";
+		// 	}
+		// 	System.out.println(out);
+		// }
+		constraint = new Constraint(constraintMap, varCount);
+
+		this.assignmentInit();
 	}
 
 	@Override
 	protected List<Integer> orderDomainValues(int var){
-		return null;
+		// or just use a int list in map
+		return new ArrayList<Integer>(domainMap.get(new Integer(var)));
 	}
 
 	@Override
 	protected boolean assignmentComplete(){
-		return true;
+		return assignment.allAssigned();// && constraint.isSatisfied(assignment);
 	}
 
 	@Override
-	protected List<Integer> assignmentInit(){
+	protected int unassignedVar(){
+		// order on index
+		return assignment.assigned;
+	}
+
+	@Override
+	protected void assignmentInit(){
 		// return an empry linked list
-		return new LinkedList<Integer>();
+		assignment = new Assignment(varCount);
 	}
 
 	@Override
-	protected boolean valueConsistent(int value){// can integrate this in orderDomainValues
-		return true;
+	protected boolean valueConsistent(int var, int value){// can integrate this in orderDomainValues
+		return constraint.isSatisfied(assignment, var, value);
 	}
-
-
-	// private class MapColoringConstriant implements Constraint{
-	// 	@Override
-	// 	public boolean isSatisfied() {
-	// 		return true;
-	// 	}
-
-	// 	@Override
-	// 	public boolean involves() {
-	// 		return true;
-	// 	}
-	// }
 
 	private static List<String> readFile(String fileName) throws IOException {
 		Path path = Paths.get(fileName);
 		return Files.readAllLines(path, ENCODING);
 	}
 
-
-	public static void readFromFile(String filename) {
+	public static List<String> readFromFile(String filename) {
 		try {
 			List<String> lines = readFile(filename);
+			return lines;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-			int i = 0;
-			for (String line : lines) {
+	// convert a string of constraint to int
+	private void atoiConstraint(String constraint){
+		String[] raw = constraint.split(":");
+		String[] strVarSet = raw[0].split(" ");// e.g. SA Q
+		String[] strDomSets = raw[1].split(",");// e.g. red green,red blue
 
-				i++;
+		List<Integer> intVarSet = new ArrayList<Integer>(Arrays.asList(map2int(var2int, strVarSet)));
+
+		HashSet<List<Integer>> intDomSets = new HashSet<List<Integer>>();
+		for (String strDomSet: strDomSets) {
+			intDomSets.add(new ArrayList<Integer>(Arrays.asList(map2int(domain2int, strDomSet.split(" ")))));
+		}
+
+		constraintMap.put(intVarSet, intDomSets);
+
+	}
+
+	private Integer[] map2int(HashMap<String, Integer> map, String[] keys){
+		Integer[] ret = new Integer[keys.length];
+		for (int i = 0; i < keys.length; ++i) {
+			ret[i] = map.get(keys[i]);
+		}
+		return ret;
+	}
+
+	private void buildMap(HashMap<String, Integer> map, List<String> names){
+		for (String s: names) {
+			map.put(s, 0);// just put the names
+		}
+		int i = 0;
+		for (String key: map.keySet()) {// the order should be fixed
+			map.put(key, new Integer(i));
+			i++;
+		}
+
+		// test
+		// for (String key: map.keySet().toArray(new String[map.keySet().size()])) {
+		// 	System.out.println(key + ": ");
+		// }
+	}
+
+	public void printResult(Assignment assignment){
+		if (null == assignment) {
+			System.out.println("No solution for this problem");
+		} else {
+			List<String> varNames = new ArrayList<String>(var2int.keySet()); 
+			List<String> domainNames = new ArrayList<String>(domain2int.keySet());
+			for (int i = 0; i < varCount; ++i) {
+				System.out.println(varNames.get(i) + ": " + domainNames.get(assignment.assignment[i]));
 			}
-
-		} catch (IOException E) {
-			return;
 		}
 	}
 }
