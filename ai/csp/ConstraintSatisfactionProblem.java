@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.Comparator;
 
 public abstract class ConstraintSatisfactionProblem {
+	// mac updates domain
 	private final static boolean mrvON = true;
 	private final static boolean lcvON = true;
 	private final static boolean macON = true;
@@ -98,6 +99,8 @@ public abstract class ConstraintSatisfactionProblem {
 	private Assignment backtrack(Assignment assignment, Domain dom) {
 		Assignment result = null;
 
+		incrementNodeCount();
+
 		if (this.assignmentComplete()) {// assignment is complete
 			// System.out.println("test");
 			result = assignment;
@@ -130,12 +133,12 @@ public abstract class ConstraintSatisfactionProblem {
 
 	protected void resetStats() {
 		nodesExplored = 0;
-		maxMemory = 0;
+		// maxMemory = 0;
 	}
 	
 	protected void printStats() {
-		System.out.println("Nodes explored during last search:  " + nodesExplored);
-		System.out.println("Maximum memory usage during last search " + maxMemory);
+		System.out.println("backtracks :  " + nodesExplored);
+		// System.out.println("Maximum memory usage during last search " + maxMemory);
 	}
 	
 	protected void updateMemory(int currentMemory) {

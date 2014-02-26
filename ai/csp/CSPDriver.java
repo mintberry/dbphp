@@ -16,5 +16,6 @@ public class CSPDriver {
 	
 		Assignment assignment = mcProblem.basicBacktrackingSearch();
 		mcProblem.printResult(assignment);
+		mcProblem.printStats();
 	}
 }

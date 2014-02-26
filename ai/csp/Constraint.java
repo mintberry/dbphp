@@ -128,7 +128,7 @@ public class Constraint {
             found = false;
             for (Integer x2: domainMap.get(vars.get(1))) {
                 values.set(1, x2);
-                if (map.get(vars).contains(values)) {// map may not have vars? FIXME
+                if (getConstraint(vars).contains(values)) {// map may not have vars? FIXME
                     found = true;
                     break;
                 }
@@ -222,6 +222,17 @@ public class Constraint {
             }
         }
         return ret;
+    }
+
+    private HashSet<List<Integer>> getConstraint(List<Integer> key){
+        List<Integer> liKey = new ArrayList<Integer>(key);
+        if (!map.containsKey(liKey)) {
+            Integer temp = liKey.get(0);
+            liKey.set(0, liKey.get(1));
+            liKey.set(1, temp);
+        }
+
+        return map.get(liKey);
     }
 
 }
