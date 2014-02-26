@@ -98,25 +98,30 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 		this.assignmentInit();
 	}
 
-	@Override
-	protected List<Integer> orderDomainValues(HashMap<Integer, HashSet<Integer>> domainMap, int var){
-		// or just use a int list in map
-		// reorder by lcv
-		return new ArrayList<Integer>(domainMap.get(new Integer(var)));
-	}
+	// @Override
+	// protected List<Integer> orderDomainValues(HashMap<Integer, HashSet<Integer>> domainMap, int var){
+	// 	// or just use a int list in map
+	// 	// reorder by lcv
+	// 	return new ArrayList<Integer>(domainMap.get(new Integer(var)));
+	// }
 
-	@Override
-	protected boolean assignmentComplete(){
-		return assignment.allAssigned();// && constraint.isSatisfied(assignment);
-	}
+	// @Override
+	// protected boolean assignmentComplete(){
+	// 	return assignment.allAssigned();// && constraint.isSatisfied(assignment);
+	// }
 
-	@Override
-	protected int unassignedVar(HashMap<Integer, HashSet<Integer>> domainMap){
-		// order on index
-		// add mrv
+	// @Override
+	// protected int unassignedVar(Domain domain){
+	// 	// order on index
+	// 	// add mrv
 
-		return assignment.assigned;
-	}
+	// 	return assignment.assigned;
+	// }
+
+	// @Override
+	// protected boolean inference(Domain domain){
+	// 	return constraint.mac3(domain.map);
+	// }
 
 	@Override
 	protected void assignmentInit(){
@@ -124,10 +129,10 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 		assignment = new Assignment(varCount);
 	}
 
-	@Override
-	protected boolean valueConsistent(int var, int value){// can integrate this in orderDomainValues
-		return constraint.isSatisfied(assignment, var, value);
-	}
+	// @Override
+	// protected boolean valueConsistent(int var, int value){// can integrate this in orderDomainValues
+	// 	return constraint.isSatisfied(assignment, var, value);
+	// }
 
 	private static List<String> readFile(String fileName) throws IOException {
 		Path path = Paths.get(fileName);

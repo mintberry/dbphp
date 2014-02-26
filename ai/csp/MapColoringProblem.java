@@ -99,25 +99,36 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 		this.assignmentInit();
 	}
 
-	@Override
-	protected List<Integer> orderDomainValues(HashMap<Integer, HashSet<Integer>> domainMap, int var){
-		// or just use a int list in map
-		// reorder by lcv
-		return new ArrayList<Integer>(domainMap.get(new Integer(var)));
-	}
+	// @Override
+	// protected List<Integer> orderDomainValues(HashMap<Integer, HashSet<Integer>> domainMap, int var){
+	// 	// or just use a int list in map
+	// 	// reorder by lcv
+	// 	return new ArrayList<Integer>(domainMap.get(new Integer(var)));
+	// }
 
-	@Override
-	protected boolean assignmentComplete(){
-		return assignment.allAssigned();// && constraint.isSatisfied(assignment);
-	}
+	// @Override
+	// protected int unassignedVar(Domain domain){
+	// 	// order on index
+	// 	// add mrv
+	// 	int ret = -1;
+	// 	if (mrvON) {
+	// 		ret = constraint.mrv(domain);
+	// 	} else {
+	// 		ret = assignment.assigned;
+	// 	}
 
-	@Override
-	protected int unassignedVar(HashMap<Integer, HashSet<Integer>> domainMap){
-		// order on index
-		// add mrv
+	// 	return ret;
+	// }
 
-		return assignment.assigned;
-	}
+	// @Override
+	// protected boolean inference(Domain domain){// mac
+	// 	return macON?constraint.mac3(domain.map):!macON;
+	// }
+
+	// @Override
+	// protected boolean assignmentComplete(){
+	// 	return assignment.allAssigned();// && constraint.isSatisfied(assignment);
+	// }
 
 	@Override
 	protected void assignmentInit(){
@@ -125,10 +136,10 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 		assignment = new Assignment(varCount);
 	}
 
-	@Override
-	protected boolean valueConsistent(int var, int value){// can integrate this in orderDomainValues
-		return constraint.isSatisfied(assignment, var, value);
-	}
+	// @Override
+	// protected boolean valueConsistent(int var, int value){// can integrate this in orderDomainValues
+	// 	return constraint.isSatisfied(assignment, var, value);
+	// }
 
 	private static List<String> readFile(String fileName) throws IOException {
 		Path path = Paths.get(fileName);
