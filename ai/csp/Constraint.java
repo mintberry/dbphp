@@ -5,15 +5,36 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import csp.ConstraintSatisfactionProblem.*;
 
 public class Constraint {
     private HashMap<List<Integer>, HashSet<List<Integer>>> map;
-    private int varCount;// FIXME
+    // a hashmap for graph
+    private HashMap<Integer, HashSet<Integer>> vars;
 
     public Constraint(HashMap<List<Integer>, HashSet<List<Integer>>> map, int count){
         this.map = map;
-        this.varCount = count;
+
+        // build the map for binary constraints
+        this.vars = new HashMap<Integer, HashSet<Integer>>();
+        for (List<Integer> li: map.keySet()) {
+            Integer key1 = li.get(0);
+            Integer key2 = li.get(0);
+            if (!vars.containsKey(key1)) {
+                vars.put(key1, new HashSet<Integer>());
+                vars.get(key1).add(key2);// add the neighbor
+            } else {
+                vars.get(key1).add(key2);
+            }
+
+            if (!vars.containsKey(key2)) {
+                vars.put(key2, new HashSet<Integer>());
+                vars.get(key2).add(key1);// add the neighbor
+            } else {
+                vars.get(key2).add(key1);
+            }
+        }
     }
 
     public boolean isSatisfied(Assignment assignment){// FIXME, only valid for binary constraint
@@ -38,37 +59,24 @@ public class Constraint {
     }
 
     public boolean isSatisfied(Assignment assignment, int var, int value){
-        for (Map.Entry<List<Integer>, HashSet<List<Integer>>> entry: map.entrySet()) {
-            List<Integer> vars = entry.getKey();
-            List<Integer> values = new ArrayList<Integer>(vars);
-            // System.out.println("test2: " + values.size() + ":" + vars.size());
-            if (vars.contains(new Integer(var))) {// if var is in this key
-                for (int i = 0; i < vars.size(); ++i) {
-                    // if (var == vars.get(i).intValue()){// get index of var, appear only once
-                    //     // check if there is a match
-                    //     for (List<Integer> li: entry.getValue()) {
-                    //         if (li.get(i).intValue() == value) {
-                    //             // System.out.println("test3: " + assignment.assigned);
-                    //             return true;
-                    //         }
-                    //     }
-                    //     // if no match
-                    //     return false;
-                    // } 
-                    // assignment.print();
-                    if (assignment.isAssigned(vars.get(i))) {
-                        values.set(i, new Integer(assignment.assignmentAt(vars.get(i).intValue())));
-                    } else if(var == vars.get(i)){
-                        values.set(i, new Integer(value));
-                    } else {
-                        // this key is not fully assigned
-                        // keyAssigned = false;
-                        // break;
-                        values.set(i, new Integer(-1));
+        if (involves(var)) {
+            for (Map.Entry<List<Integer>, HashSet<List<Integer>>> entry: map.entrySet()) {
+                List<Integer> vars = entry.getKey();
+                List<Integer> values = new ArrayList<Integer>(vars);
+                // System.out.println("test2: " + values.size() + ":" + vars.size());
+                if (vars.contains(new Integer(var))) {// if var is in this key
+                    for (int i = 0; i < vars.size(); ++i) {
+                        if (assignment.isAssigned(vars.get(i))) {
+                            values.set(i, new Integer(assignment.assignmentAt(vars.get(i).intValue())));
+                        } else if(var == vars.get(i)){
+                            values.set(i, new Integer(value));
+                        } else {
+                            values.set(i, new Integer(-1));
+                        }
                     }
-                }
-                if (!partialMatch(entry.getValue(), values)) {
-                    return false;
+                    if (!partialMatch(entry.getValue(), values)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -76,8 +84,53 @@ public class Constraint {
     }
 
     public boolean involves(int var){
-        // FIXME
-        return var < varCount;
+        return vars.containsKey(new Integer(var));
+    }
+
+    public boolean mac3(HashMap<Integer, HashSet<Integer>> domainMap){
+        List<List<Integer>> queue = new LinkedList<List<Integer>>(map.keySet());// FIXME for MAC
+
+        while (!queue.isEmpty()) {
+            List<Integer> li = queue.remove(0);
+            if (li.size() == 2) {// binary constraint only
+                if (revise(domainMap, li)) {
+                    if (!domainMap.get(li.get(0)).isEmpty()) {// domain of li[0] is not empty
+                        
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+
+    }
+
+    private boolean revise(HashMap<Integer, HashSet<Integer>> domainMap, List<Integer> vars){
+        boolean revised = false, found = false;
+        List<Integer> domain = new ArrayList<Integer>(domainMap.get(vars.get(0)));
+        for (Integer x1: domain) {
+            List<Integer> values = new ArrayList<Integer>(vars);
+            values.set(0, x1);
+            found = false;
+            for (Integer x2: domainMap.get(vars.get(1))) {
+                values.set(1, x2);
+                if (map.get(vars).contains(values)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {// no match
+                revised = true;
+                if(!domainMap.get(vars.get(0)).remove(x1)){
+                    System.out.println("revise domain failed");
+                }
+            }
+        }
+
+        return revised;
     }
 
 

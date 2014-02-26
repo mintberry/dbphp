@@ -21,7 +21,7 @@ import java.lang.Math;
 // for the first part of the assignment, you might not extend UUSearchProblem,
 //  since UUSearchProblem is incomplete until you finish it.
 
-public class MapColoringProblem extends ConstraintSatisfactionProblem {
+public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 	final static Charset ENCODING = StandardCharsets.UTF_8;
 
 	// the following are the only instance variables you should need.
@@ -39,7 +39,7 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 	private int varCount;
 
 
-	public MapColoringProblem() {
+	public CircuitBoardProblem() {
 		List<String> lines = readFromFile("mapcoloring.csp");
 
 		List<String> varNames; 
@@ -68,7 +68,6 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 
 			domainMap.put(new Integer(i), domainSet);
 		}
-		domain = new Domain(domainMap);
 
 		// init constraint
 		constraintMap = new HashMap<List<Integer>, HashSet<List<Integer>>>();
