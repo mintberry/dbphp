@@ -21,6 +21,7 @@ public class CSPDriver {
 		CircuitBoardProblem cbProblem = new CircuitBoardProblem("circuitboard.csp");
 		assignment = cbProblem.basicBacktrackingSearch();
 		cbProblem.printResult(assignment);
-		mcProblem.printStats();
+		cbProblem.printBoard(assignment);
+		cbProblem.printStats();
 	}
 }

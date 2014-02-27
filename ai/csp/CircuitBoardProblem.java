@@ -41,15 +41,16 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 
 	private Point board;
 
+	private List<String> varNames; 
+	private	List<Point> varSizes;
+
 
 	public CircuitBoardProblem(String cspFile) {
 		List<String> lines = readFromFile(cspFile);
 
-		List<String> varNames; 
-		List<Point> varSizes;
 
 		// get board size from file
-		board = str2size(lines.get(0));
+		board = str2point(lines.get(0));
 
 
 		// get variables and sizes
@@ -69,8 +70,8 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 		domain2int = new HashMap<Point, Integer>();
 		// n * m positions
 		List<Point> allPoints = new ArrayList<Point>(board.x * board.y);
-		for (int i = 0; i <= board.x; ++i) {
-			for (int j = 0; j <= board.y; ++j) {
+		for (int i = 0; i < board.x; ++i) {
+			for (int j = 0; j < board.y; ++j) {
 				allPoints.add(new Point(i, j));
 			}
 		}
@@ -83,7 +84,7 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 			Point size = varSizes.get(i);
 			String varName = varNames.get(i);
 			for (Point base: allPoints) {
-				if (base.x + size.x <= board.x && base.y + size.y <= board.y) {// a legal position for this var
+				if (base.x + size.x < board.x && base.y + size.y < board.y) {// a legal position for this var
 					Integer key = var2int.get(varName);
 					Integer value = domain2int.get(base);
 					if (!domainMap.containsKey(key)) {
@@ -266,10 +267,36 @@ public class CircuitBoardProblem extends ConstraintSatisfactionProblem {
 			System.out.println("No solution for this problem");
 		} else {
 			List<String> varNames = new ArrayList<String>(var2int.keySet()); 
-			List<Point> domainNames = new ArrayList<Point>(domain2int.keySet());// FIXME
+			List<Point> domainNames = new ArrayList<Point>(domain2int.keySet());
 			for (int i = 0; i < varCount; ++i) {
-				System.out.println(String.format("%3s: %s",varNames.get(i),domainNames.get(assignment.assignment[i]).toString()));
+				System.out.println(String.format("%3s: %s",varNames.get(i), domainNames.get(assignment.assignment[i]).toString()));
 			}
+		}
+	}
+
+	public void printBoard(Assignment assignment){
+		char[][] cBoard = new char[board.y][board.x];
+		List<Point> domainNames = new ArrayList<Point>(domain2int.keySet());
+		for (int i = 0; i < board.y; ++i) {
+			for (int j = 0; j < board.x; ++j) {
+				cBoard[i][j] = '.';
+			}
+		}
+		for (int i = 0; i < varCount; ++i) {
+			String var = varNames.get(i);
+			Point size = varSizes.get(i);
+
+			Point base = domainNames.get(assignment.assignment[i]);
+			for (int k = base.x; k <= base.x + size.x; ++k) {
+				for (int j = base.y; j <= base.y + size.y; ++j) {
+					cBoard[j][k] = var.charAt(0);// first character
+				}
+			}
+		}
+
+		for (int i = 0; i < board.y; ++i) {
+			System.out.print(cBoard[board.y - i - 1]);
+			System.out.print("\n");
 		}
 	}
 
