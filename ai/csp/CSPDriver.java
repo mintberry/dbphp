@@ -12,10 +12,15 @@ public class CSPDriver {
 
 
 		// set up the "standard" 331 problem:
-		MapColoringProblem mcProblem = new MapColoringProblem();
+		MapColoringProblem mcProblem = new MapColoringProblem("mapcoloring.csp");
 	
 		Assignment assignment = mcProblem.basicBacktrackingSearch();
 		mcProblem.printResult(assignment);
+		mcProblem.printStats();
+
+		CircuitBoardProblem cbProblem = new CircuitBoardProblem("circuitboard.csp");
+		assignment = cbProblem.basicBacktrackingSearch();
+		cbProblem.printResult(assignment);
 		mcProblem.printStats();
 	}
 }

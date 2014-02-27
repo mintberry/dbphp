@@ -15,7 +15,7 @@ public abstract class ConstraintSatisfactionProblem {
 	// mac updates domain
 	private final static boolean mrvON = true;
 	private final static boolean lcvON = true;
-	private final static boolean macON = true;
+	private final static boolean macON = true; // MAC has problem
 	
 	// used to store performance information about search runs.
 	//  these should be updated during the process of searches

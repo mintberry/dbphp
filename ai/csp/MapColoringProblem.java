@@ -39,8 +39,8 @@ public class MapColoringProblem extends ConstraintSatisfactionProblem {
 	private int varCount;
 
 
-	public MapColoringProblem() {
-		List<String> lines = readFromFile("mapcoloring.csp");
+	public MapColoringProblem(String cspFile) {
+		List<String> lines = readFromFile(cspFile);
 
 		List<String> varNames; 
 		List<String> domainNames;
