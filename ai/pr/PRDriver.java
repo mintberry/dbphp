@@ -20,14 +20,14 @@ public class PRDriver extends Application {
     Maze maze;
 
     // instance variables used for graphical display
-    private static final int PIXELS_PER_SQUARE = 8;
+    private static final int PIXELS_PER_SQUARE = 50;
     MazeView mazeView;
     List<AnimationPath> animationPathList;
     
     // some basic initialization of the graphics; needs to be done before 
     //  runSearches, so that the mazeView is available
     private void initMazeView() {
-        maze = Maze.readFromFile("simple.maz");
+        maze = Maze.readFromFile("5x5.maz");
         
         animationPathList = new ArrayList<AnimationPath>();
         // build the board
@@ -40,13 +40,14 @@ public class PRDriver extends Application {
     }
 
     // assumes maze and mazeView instance variables are already available
-    private void runSearches() {
+    private void reasoning() {
 
         // List<SearchNode> astarPath = mazeProblem.astarSearch();
         // animationPathList.add(new AnimationPath(mazeView, astarPath));
         // System.out.println("A*:  ");
         // mazeProblem.printStats();
-
+        PRSolver solver = new PRSolver(maze, "rgby");
+        solver.viterbi("rgyb");
     }
 
     // javafx setup of main view window for mazeworld
@@ -65,7 +66,7 @@ public class PRDriver extends Application {
         primaryStage.show();
 
         // do the real work of the driver; run search tests
-        runSearches();
+        reasoning();
 
         // sets mazeworld's game loop (a javafx Timeline)
         Timeline timeline = new Timeline(1.0);

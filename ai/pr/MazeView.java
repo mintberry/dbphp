@@ -47,9 +47,10 @@ public class MazeView extends Group {
 						pixelsPerSquare);
 
 				square.setStroke(Color.GRAY);
-				if(maze.getChar(c, r) != '#') {
+				char ch;
+				if((ch = maze.getChar(c, r)) != '#') {
 					Color cl;
-					switch(c){
+					switch(ch){
 						case 'r':
 						cl = Color.RED;
 						break;

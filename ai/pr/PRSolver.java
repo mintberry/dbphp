@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.lang.Math;
 
 import java.awt.Point;
 
@@ -16,17 +20,38 @@ public class PRSolver{
     private HashMap<StateVar, Distribution<KeyPair<StateVar, StateVar>>> transitionTable;
     private HashMap<Character, Distribution<KeyPair<Character, Character>>> emissionTable;// universal emission table
 
+    private Distribution<StateVar> initD;
+
     public PRSolver(Maze maze, String colors){
         this.maze = maze;
         this.colors = colors;
         initTables();
     }
 
+    public List<StateVar> viterbi(String observations){
+        List<Distribution<StateVar>> table = filtering(observations);
+        List<StateVar> bestSeq = new ArrayList<StateVar>(observations.length());
+        Distribution<StateVar> lastD = table.get(table.size() - 1);// last distribution
+        StateVar sv = lastD.mostPossible();
+        // do{
+        //     bestSeq.add(0, sv);
+        //     System.out.println("state: " + sv.position + " " + sv.color);
+        //     sv = sv.lastState;
+        // } while (sv != null);// should not include initD
+
+        do{
+            bestSeq.add(0, sv);
+            System.out.println("state: " + sv.position + " " + sv.color);
+            sv = sv.lastState;
+        } while (sv.lastState != null);// should not include initD
+
+        return bestSeq;
+    }
 
     // observation is a list of chars
     public List<Distribution<StateVar>> filtering(String observations){
         List<Distribution<StateVar>> ret = new LinkedList<Distribution<StateVar>>();
-        Distribution<StateVar> distribution = null;// should not be null
+        Distribution<StateVar> distribution = initD;
         for (char c: observations.toCharArray()) {
             distribution = filterAt(distribution, c);
             ret.add(distribution);
@@ -38,6 +63,7 @@ public class PRSolver{
     private void initTables(){
         transitionTable = new HashMap<StateVar, Distribution<KeyPair<StateVar, StateVar>>>();
         emissionTable = new HashMap<Character, Distribution<KeyPair<Character, Character>>>();
+        initD = new Distribution<StateVar>();
         // build the emission table
         int colorCount = this.colors.length();
         for (char cs: this.colors.toCharArray()) {
@@ -60,7 +86,10 @@ public class PRSolver{
                 StateVar svs = getStateVar(x, y, asciiMaze);
                 // list possible transitions
                 if (svs != null) {// sv is not wall
+
                     Distribution<KeyPair<StateVar, StateVar>> posTable = new Distribution<KeyPair<StateVar, StateVar>>();
+
+                    initD.updateSub(svs, 1.0);// each state is of equal prob at start
 
                     for (int[] action: actions) {
                         int xNew = x + action[0];
@@ -80,6 +109,8 @@ public class PRSolver{
 
             }
         }
+
+        initD.normalize();
     }
 
     private StateVar getStateVar(int x, int y, char[] asciiMaze){
@@ -97,6 +128,33 @@ public class PRSolver{
         // new a distribution
         Distribution<StateVar> ret = new Distribution<StateVar>();
 
+        for (StateVar sv_init: initD.keySet()) {
+            StateVar sv = new StateVar(sv_init);// must create a new state
+
+            Distribution<KeyPair<Character, Character>> colorTable = emissionTable.get(new Character(sv.color));
+
+            double obsProb, transitionProb = 0.0;
+            obsProb = colorTable.getProb(new KeyPair<Character, Character>(new Character(sv.color), new Character(obs)));
+            // System.out.println("obs prob: " +  obsProb);
+
+            double viterbiProb, bestProb = Double.MIN_VALUE;
+
+            for (StateVar svs: lastD.keySet()) {
+                Distribution<KeyPair<StateVar, StateVar>> posTable = transitionTable.get(svs);
+                transitionProb += (posTable.getProb(new KeyPair<StateVar, StateVar>(svs, sv)) * lastD.getProb(svs));
+
+                // for viterbi, need to sort this?
+                viterbiProb = posTable.getProb(new KeyPair<StateVar, StateVar>(svs, sv)) * lastD.getProb(svs);
+                if (bestProb < viterbiProb) {
+                    bestProb = viterbiProb;
+                    sv.lastState = svs;
+                }
+
+            }
+            // System.out.println("transition prob: " +  transitionProb);
+            ret.updateSub(sv, obsProb * transitionProb);
+        }
+        ret.normalize();
         return ret;
     }
 
@@ -105,17 +163,21 @@ public class PRSolver{
         protected Point position;
         protected char color;// just use a char to represent a color
 
+        protected StateVar lastState;// for viterbi last state
+
         // each state has an emission table, or may use an universal emission table
         // private Distribution<KeyPair<Character, Character>> emissionTable;
 
         public StateVar(int x, int y, char color){
             this.position = new Point(x, y);
             this.color = color;
+            this.lastState = null;
         }
 
-        public StateVar(StateVar sv){
+        public StateVar(StateVar sv){// not called yet
             this.position = new Point(sv.position);
             this.color = sv.color;
+            this.lastState = null;
         }
 
         @Override
@@ -162,7 +224,23 @@ public class PRSolver{
         }
 
         public double getProb(T key){
-            return distribution.get(key).doubleValue();
+            if (distribution.containsKey(key)) {
+                return distribution.get(key).doubleValue();    
+            }
+            return 0.0;
+        }
+
+        public List<T> keySet(){
+            return new ArrayList<T>(distribution.keySet());
+        }
+
+        public T mostPossible(){
+            return Collections.max(this.distribution.keySet(), new Comparator<T>(){
+            public int compare(T k1, T k2) {
+                //ascending order
+                return getProb(k1) >= getProb(k2) ? 1 : -1;
+            }
+            });
         }
     }
 

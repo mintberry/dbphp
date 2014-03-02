@@ -64,7 +64,7 @@ public class Maze {
 		// on the map
 		if(x >= 0 && x < width && y >= 0 && y < height) {
 			// and it's a floor tile, not a wall tile:
-			return getChar(x, y) == '.';
+			return getChar(x, y) != '#';
 		}
 		return false;
 	}
