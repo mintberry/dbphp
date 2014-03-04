@@ -41,7 +41,7 @@ public class PRSolver{
 
         do{
             bestSeq.add(0, sv);
-            System.out.println("state: " + sv.position + " " + sv.color);
+            System.out.println("state: " + sv);
             sv = sv.lastState;
         } while (sv.lastState != null);// should not include initD
 
@@ -55,6 +55,7 @@ public class PRSolver{
         for (char c: observations.toCharArray()) {
             distribution = filterAt(distribution, c);
             ret.add(distribution);
+            distribution.printDist();
         }
         return ret;
     }
@@ -159,7 +160,7 @@ public class PRSolver{
     }
 
     // state variable instance
-    protected class StateVar{
+    public class StateVar{
         protected Point position;
         protected char color;// just use a char to represent a color
 
@@ -188,6 +189,14 @@ public class PRSolver{
         @Override
         public int hashCode(){
             return position.hashCode();
+        }
+
+        @Override
+        public String toString(){
+            String str = new String();
+            str += String.format("(%d,%d) ", position.x, position.y);
+            str += color;
+            return str;
         }
     }
 
@@ -242,6 +251,14 @@ public class PRSolver{
             }
             });
         }
+
+        public void printDist(){
+            System.out.println("distribution has " + distribution.size() + " entries");
+            for (T key: distribution.keySet()) {
+                System.out.println(String.format("%s: %s", key, distribution.get(key)));
+            }
+            System.out.print("\n");
+        }        
     }
 
     // a pair, src to dst, used for trasition and emission

@@ -100,10 +100,10 @@ public class MazeView extends Group {
 	//  return the piece as a Node for use in animations
 	public Node addPiece(int c, int r) {
 		
-		int radius = (int)(pixelsPerSquare * .4);
+		int radius = (int)(pixelsPerSquare * .2);
 
 		Circle piece = new Circle(squareCenterX(c), squareCenterY(r), radius);
-		piece.setFill(colors[currentColor % 9]);
+		piece.setFill(colors[10]);
 		currentColor++;
 		
 		this.getChildren().add(piece);

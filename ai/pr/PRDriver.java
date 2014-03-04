@@ -15,6 +15,8 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import probabilistic.PRSolver.*;
+
 public class PRDriver extends Application {
 
     Maze maze;
@@ -47,7 +49,8 @@ public class PRDriver extends Application {
         // System.out.println("A*:  ");
         // mazeProblem.printStats();
         PRSolver solver = new PRSolver(maze, "rgby");
-        solver.viterbi("rgyb");
+        List<StateVar> path = solver.viterbi("rbyg");
+        animationPathList.add(new AnimationPath(mazeView, path));
     }
 
     // javafx setup of main view window for mazeworld
@@ -98,7 +101,7 @@ public class PRDriver extends Application {
     // etc.
     private class AnimationPath {
         private Node piece;
-        // private List<SearchNode> searchPath;
+        private List<StateVar> searchPath;
         private int currentMove = 0;
 
         private int lastX;
@@ -106,12 +109,12 @@ public class PRDriver extends Application {
 
         boolean animationDone = true;
 
-        public AnimationPath(MazeView mazeView) {
-            // searchPath = path;
-            // SimpleMazeNode firstNode = (SimpleMazeNode) searchPath.get(0);
-            // piece = mazeView.addPiece(firstNode.getX(), firstNode.getY());
-            // lastX = firstNode.getX();
-            // lastY = firstNode.getY();
+        public AnimationPath(MazeView mazeView, List<StateVar> path) {
+            searchPath = path;
+            StateVar firstNode = searchPath.get(0);
+            piece = mazeView.addPiece(firstNode.position.x, firstNode.position.y);
+            lastX = firstNode.position.x;
+            lastY = firstNode.position.y;
         }
 
         // try to do the next step of the animation. Do nothing if
@@ -121,18 +124,18 @@ public class PRDriver extends Application {
             // animationDone is an instance variable that is updated
             //  using a callback triggered when the current animation
             //  is complete
-            // if (currentMove < searchPath.size() && animationDone) {
-            //     SimpleMazeNode mazeNode = (SimpleMazeNode) searchPath
-            //             .get(currentMove);
-            //     int dx = mazeNode.getX() - lastX;
-            //     int dy = mazeNode.getY() - lastY;
-            //     // System.out.println("animating " + dx + " " + dy);
-            //     animateMove(piece, dx, dy);
-            //     lastX = mazeNode.getX();
-            //     lastY = mazeNode.getY();
+            if (currentMove < searchPath.size() && animationDone) {
+                StateVar mazeNode = searchPath
+                        .get(currentMove);
+                int dx = mazeNode.position.x - lastX;
+                int dy = mazeNode.position.y - lastY;
+                // System.out.println("animating " + dx + " " + dy);
+                animateMove(piece, dx, dy);
+                lastX = mazeNode.position.x;
+                lastY = mazeNode.position.y;
 
-            //     currentMove++;
-            // }
+                currentMove++;
+            }
 
         }
 
