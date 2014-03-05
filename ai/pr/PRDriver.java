@@ -49,8 +49,9 @@ public class PRDriver extends Application {
         // System.out.println("A*:  ");
         // mazeProblem.printStats();
         PRSolver solver = new PRSolver(maze, "rgby");
-        List<StateVar> path = solver.viterbi("rbyg");
-        animationPathList.add(new AnimationPath(mazeView, path));
+        // List<StateVar> path = solver.viterbi("bgyrrbggy");
+        // animationPathList.add(new AnimationPath(mazeView, path));
+        solver.autotest(10000, 5);
     }
 
     // javafx setup of main view window for mazeworld
@@ -72,7 +73,7 @@ public class PRDriver extends Application {
         reasoning();
 
         // sets mazeworld's game loop (a javafx Timeline)
-        Timeline timeline = new Timeline(1.0);
+        Timeline timeline = new Timeline(0.2);
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.getKeyFrames().add(
                 new KeyFrame(Duration.seconds(.05), new GameHandler()));

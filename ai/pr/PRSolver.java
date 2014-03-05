@@ -41,7 +41,7 @@ public class PRSolver{
 
         do{
             bestSeq.add(0, sv);
-            System.out.println("state: " + sv);
+            // System.out.println("state: " + sv);
             sv = sv.lastState;
         } while (sv.lastState != null);// should not include initD
 
@@ -52,10 +52,12 @@ public class PRSolver{
     public List<Distribution<StateVar>> filtering(String observations){
         List<Distribution<StateVar>> ret = new LinkedList<Distribution<StateVar>>();
         Distribution<StateVar> distribution = initD;
+        int i = 0;
         for (char c: observations.toCharArray()) {
             distribution = filterAt(distribution, c);
             ret.add(distribution);
-            distribution.printDist();
+            // System.out.println("time " + ++i + " " + c);
+            // distribution.printDist();
         }
         return ret;
     }
@@ -209,21 +211,21 @@ public class PRSolver{
             sum = 0.0;
         }
 
-        public void updateSub(T key, Double value){
+        public void updateSub(T key, Double prob){
             if (distribution.containsKey(key)) {
                 sum -= distribution.get(key);
             }
-            distribution.put(key, value);
-            sum += value;
+            distribution.put(key, prob);
+            sum += prob;
         }
 
-        public void updateAdd(T key, Double value){
-            double newVal = value;
+        public void updateAdd(T key, Double prob){
+            double newProb = prob;
             if (distribution.containsKey(key)) {
-                newVal = distribution.get(key) + value;
+                newProb = distribution.get(key) + prob;
             }
-            distribution.put(key, newVal);
-            sum += value;
+            distribution.put(key, newProb);
+            sum += prob;
         }
 
         public void normalize(){
@@ -236,7 +238,7 @@ public class PRSolver{
             if (distribution.containsKey(key)) {
                 return distribution.get(key).doubleValue();    
             }
-            return 0.0;
+            return 0.0;// if key is not in distribution, return 0
         }
 
         public List<T> keySet(){
@@ -258,6 +260,21 @@ public class PRSolver{
                 System.out.println(String.format("%s: %s", key, distribution.get(key)));
             }
             System.out.print("\n");
+        }
+
+        private T randomVar(double prob){
+            double lb = 0.0, ub = 0.0;
+            List<T> keySet = this.keySet();
+            T cur = null;
+            for (int i = 0; i < keySet.size(); ++i) {
+                cur = keySet.get(i);
+                lb = ub;
+                ub += distribution.get(cur).doubleValue();
+                if (prob >= lb && prob < ub) {
+                    return cur;
+                }
+            }
+            return cur;
         }        
     }
 
@@ -282,5 +299,57 @@ public class PRSolver{
         public int hashCode(){
             return src.hashCode() * 1000 + dst.hashCode();
         }
+    }
+
+    // below this are test methods
+    ///////////////////////////////
+
+
+    public void autotest(int limit, int len){
+        double correct = 0;
+
+        for (int i = 0; i < limit; ++i) {
+            List<StateVar> actual = randomPath(len);
+            String obs = randomObs(actual);
+            List<StateVar> result = viterbi(obs);
+            correct += pathCompare(actual, result);
+        }
+
+        System.out.println("correct rate: " + correct / limit);
+    }
+
+    private List<StateVar> randomPath(int len){
+        List<StateVar> ret = new ArrayList<StateVar>(len);
+        List<StateVar> states = initD.keySet();
+        StateVar cur = states.get((int)(Math.random() * (states.size() - 1)));// random start state
+        ret.add(cur);
+        for (int i = 1; i < len; ++i) {
+            double rand = Math.random();
+            StateVar sv = transitionTable.get(cur).randomVar(rand).dst;
+            cur = sv;
+            ret.add(cur);
+        }
+        return ret;
+    }
+
+    private String randomObs(List<StateVar> path){
+        String ret = new String();
+        for (StateVar sv: path) {
+            double rand = Math.random();
+            Character c = emissionTable.get(new Character(sv.color)).randomVar(rand).dst;
+            ret += c.charValue();
+        }
+        return ret;
+    }
+
+    private double pathCompare(List<StateVar> actual, List<StateVar> result){
+        int len = actual.size();
+        double ret = 0.0;
+        for (int i = 0; i < len; ++i) {
+            if (actual.get(i).equals(result.get(i))) {
+                ret += 1.0;
+            }
+        }
+        return ret / len;
     }
 }

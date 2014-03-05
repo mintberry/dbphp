@@ -63,6 +63,9 @@ public class MazeView extends Group {
 						case 'y':
 						cl = Color.YELLOW;
 						break;
+						case 'v':
+						cl = Color.VIOLET;
+						break;
 						default:
 						cl = Color.ORANGE;
 						break;
